@@ -1,4 +1,4 @@
-
+from data_parser import DataParser
 class Communicator():
     def __init__(self):
         pass

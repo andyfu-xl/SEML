@@ -1,3 +1,5 @@
+from database import Database
+# from model import Model
 class Preprocessor():
     def __init__(self, data, Database):
         self.data = data

@@ -1,4 +1,4 @@
-from database import Database
+from modules.database import Database
 # from model import Model
 class Preprocessor():
     def __init__(self, data, Database):

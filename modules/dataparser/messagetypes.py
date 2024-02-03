@@ -55,7 +55,7 @@ class Oru_r01(MLLPMessage):
         obx = message_segments[3].split(b'|')
         self.msg_timestamp = msh[6]
         self.mrn = pid[3]
-        self.obr_timestamp = obr[6]
+        self.obr_timestamp = obr[7]
         self.obx_type = obx[3]
         self.obx_value = float(obx[5])
         return True

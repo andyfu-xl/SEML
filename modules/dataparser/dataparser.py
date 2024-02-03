@@ -48,5 +48,9 @@ if __name__ == '__main__':
     oru_message = b'\x0bMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331113300||ORU^R01|||2.5\rPID|1||257406\rOBR|1||||||20240331113300\rOBX|1|SN|CREATININE||92.95579346699137\r\x1c\r'
     dp = DataParser()
     msg = dp.process_message(oru_message)
+    print(msg.msg_timestamp)
+    print(msg.mrn)
+    print(msg.obr_timestamp)
+    print(msg.obx_type)
     print(msg.obx_value)
     

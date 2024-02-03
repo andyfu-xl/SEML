@@ -23,7 +23,7 @@ class DataParser():
         msg_type = msh_segment.split(b'|')[8]
         return msg_type
 
-    def process_message(self, message):
+    def process_message(self, message: bytes):
         message = self.remove_start_and_end(message)
         message_segments = self.segment_message(message)
         msg_type = self.get_message_type(message_segments)

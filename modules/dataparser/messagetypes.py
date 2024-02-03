@@ -3,7 +3,6 @@ class MLLPMessage:
     def __init__(self):
         self.msg_timestamp = None
         self.mrn = None
-        self.pid = None
 
 
 class Adt_a01(MLLPMessage):

@@ -18,6 +18,7 @@ def serve_mllp_client(client, source, messages, shutdown_mllp):
             mllp = bytes(chr(MLLP_START_OF_BLOCK), "ascii")
             mllp += messages[i]
             mllp += bytes(chr(MLLP_END_OF_BLOCK) + chr(MLLP_CARRIAGE_RETURN), "ascii")
+            print(mllp)
             client.sendall(mllp)
             received = []
             while len(received) < 1:

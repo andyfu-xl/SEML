@@ -1,4 +1,3 @@
-from enum import Enum
 import messagetypes
 # from preprocessor import Preprocessor
 
@@ -8,20 +7,27 @@ class DataParser():
         self.A01 = b'ADT^A01'
         self.A03 = b'ADT^A03'
 
-    def segment_message(self, message: bytes):
-        segments = message.split(b'\r')
+    def segment_message(self, message: bytes, segment=b'\r'):
+        segments = message.split(segment)
         segments = [x for x in segments if x]
         return segments
 
     def remove_start_and_end(self, message: bytes, start=b'\x0b', end=b'\x1c'):
-        message = message.replace(start, b'')
-        message = message.replace(end, b'')
+        message = message.replace(start, b'', 1)
+        message = message.replace(end, b'', 1)
         return message
 
     def get_message_type(self, message_segment: list):
         msh_segment = message_segment[0]
         msg_type = msh_segment.split(b'|')[8]
-        return msg_type
+        if msg_type == self.ORU:
+            return self.ORU
+        elif msg_type == self.A01:
+            return self.A01
+        elif msg_type == self.A03:
+            return self.A03
+        else:
+            raise ValueError('Invalid message type:', msg_type)
 
     def process_message(self, message: bytes):
         message = self.remove_start_and_end(message)
@@ -40,7 +46,8 @@ class DataParser():
             message_obj = messagetypes.Adt_a03()
             message_obj.process_message(message_segments)
             return message_obj
-        return message_obj
+        else:
+            raise ValueError('Invalid message type:', msg_type)
 
 if __name__ == '__main__':
     adt_ao1_message = b'\x0bMSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5\rPID|1||497030||ROSCOE DOHERTY||19870515|M\r\x1c\r'

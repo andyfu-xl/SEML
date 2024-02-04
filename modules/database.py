@@ -1,4 +1,7 @@
 import csv
+import csv
+from datetime import datetime
+import torch
 
 class Database:
     def __init__(self, file_path=None):
@@ -6,6 +9,7 @@ class Database:
         if file_path is not None:
             self.load_csv(file_path)
     
+
     def load_csv(self, file_path):
         with open('history.csv', newline='') as csvfile:
             reader = csv.reader(csvfile)
@@ -15,19 +19,55 @@ class Database:
                     continue
                 mrn = row[0]
                 if mrn not in self.data:
-                    self.data[mrn] = patientinfo = {"test_results": row[1:], "gender" : None, "dob" : None}
+                    test_results, last_test = self.process_dates(row[1:])
+                    self.data[mrn] = patientinfo = {"test_results": test_results, "gender" : None, "dob" : None, "name" : None, "last_test" : last_test}
                 else:
-                    raise Exception('Duplicate MRN found:', mrn)
+                    raise Exception('Duplicate MRN found:', mrn)        
+
+
+    def process_dates(test_results):
+        if len(test_results) < 2:
+            return test_results
+        curr_date = test_results[0]
+        curr_date = datetime.strptime(curr_date, '%Y-%m-%d %H:%M:%S')
+        # remove all emtpy strings
+        test_results = [x for x in test_results if x != '']
+        for i in range(0, len(test_results)-3, 2):
+            if test_results[i+2] == '':
+                test_results[i+2] = 0
+                break
+            next_date = test_results[i+2]
+            next_date = datetime.strptime(next_date, '%Y-%m-%d %H:%M:%S')
+            if next_date < curr_date:
+                raise Exception('Dates are not in order:', curr_date, next_date)
+            # compute time difference, in seconds
+            diff = (next_date - curr_date).total_seconds() / (60*60*24)
+            test_results[i] = diff
+            curr_date = next_date
+        last_test = test_results[-2]
+        test_results[-2] = 0
+        return test_results, last_test
+        
 
     def get(self, mrn):
         if mrn in self.data:
             return self.data[mrn]
+
 
     def set(self, mrn, date, value):
         if mrn in self.data:
             self.data[mrn]["test_results"].append((date, value))
         else:
             raise Exception('Error: Trying to set test results for a non-existing patient, MRN not found:', mrn)
+        if self.data[mrn]["last_test"] is None:
+            raise Exception('Error, last test date not found for patient:', mrn)
+        if date > self.data[mrn]["last_test"]:
+            self.data[mrn]["test_results"][-2] = (date - self.data[mrn]["last_test"]).total_seconds() / (60*60*24)
+            self.data[mrn]["test_results"].append(0)
+            self.data[mrn]["test_results"].append(value)
+            self.data[mrn]["last_test"] = date
+        else:
+            raise Exception('Error: Invalid new test date:', date)
         print("Test result added successfully")
             
 
@@ -39,10 +79,11 @@ class Database:
         print("Patient discharged successfully")
         
 
-    def register(self, mrn, gender, dob):
+    def register(self, mrn, gender, dob, name):
         if mrn not in self.data:
-            self.data[mrn] = {"test_results": [], "gender": gender, "dob": dob}
+            self.data[mrn] = {"test_results": [], "gender": gender, "dob": dob, "name":name, "last_test": None}
         else:
             self.data[mrn]["gender"] = gender
             self.data[mrn]["dob"] = dob
+            self.data[mrn]["name"] = name
         print("Patient registered successfully")

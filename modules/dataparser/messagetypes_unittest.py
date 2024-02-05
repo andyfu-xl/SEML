@@ -14,7 +14,7 @@ class MessageTypesUnitTest(unittest.TestCase):
         result = self.obj1.process_message(message_segments)
         self.assertEqual(result.message_type, b'ADT^A01')
         self.assertEqual(result.name, b'ROSCOE DOHERTY')
-        self.assertEqual(result.dob, b'19870515')
+        self.assertEqual(result.dob, '1987-05-15')
         self.assertEqual(result.gender, b'M')
         self.assertEqual(result.mrn, b'497030')
 

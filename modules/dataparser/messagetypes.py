@@ -1,3 +1,4 @@
+from datetime import datetime
 
 class MLLPMessage:
     def __init__(self):
@@ -22,7 +23,7 @@ class Adt_a01(MLLPMessage):
         self.msg_timestamp = msh[6]
         self.mrn = pid[3]
         self.name = pid[5]
-        self.dob = pid[7]
+        self.dob = datetime.strptime(pid[7].decode('utf-8'), '%Y%m%d').strftime('%Y-%m-%d')
         self.gender = pid[8]
         if not self.msg_timestamp or \
            not self.mrn or \

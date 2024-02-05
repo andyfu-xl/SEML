@@ -29,7 +29,7 @@ class DataParser():
         else:
             raise ValueError('Invalid message type:', msg_type)
 
-    def process_message(self, message: bytes):
+    def parse_message(self, message: bytes):
         message = self.remove_start_and_end(message)
         message_segments = self.segment_message(message)
         msg_type = self.get_message_type(message_segments)
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     adt_ao3_message = b'\x0bMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5\rPID|1||829339\r\x1c\r'
     oru_message = b'\x0bMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331113300||ORU^R01|||2.5\rPID|1||257406\rOBR|1||||||20240331113300\rOBX|1|SN|CREATININE||92.95579346699137\r\x1c\r'
     dp = DataParser()
-    msg = dp.process_message(oru_message)
+    msg = dp.parse_message(oru_message)
     print(msg.msg_timestamp)
     print(msg.mrn)
     print(msg.obr_timestamp)

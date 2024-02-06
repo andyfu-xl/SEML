@@ -11,7 +11,7 @@ class Database:
     
 
     def load_csv(self, file_path):
-        with open('history.csv', newline='') as csvfile:
+        with open(file_path, newline='') as csvfile:
             reader = csv.reader(csvfile)
             self.data = {}
             for i, row in enumerate(reader):
@@ -20,14 +20,15 @@ class Database:
                 mrn = row[0]
                 if mrn not in self.data:
                     test_results, last_test = self.process_dates(row[1:])
-                    self.data[mrn] = patientinfo = {"test_results": test_results, "gender" : None, "dob" : None, "name" : None, "last_test" : last_test}
+                    test_results = [float(x) for x in test_results]
+                    self.data[mrn] = {"test_results": test_results, "gender" : None, "dob" : None, "name" : None, "last_test" : last_test}
                 else:
                     raise Exception('Duplicate MRN found:', mrn)        
 
 
-    def process_dates(test_results):
-        if len(test_results) < 2:
-            return test_results
+    def process_dates(self, test_results):
+        if len(test_results) < 2 or len(test_results) % 2 != 0:
+            raise Exception('Invalid test results length:', test_results)
         curr_date = test_results[0]
         curr_date = datetime.strptime(curr_date, '%Y-%m-%d %H:%M:%S')
         # remove all emtpy strings
@@ -55,24 +56,24 @@ class Database:
 
 
     def set(self, mrn, date, value):
-        if mrn in self.data:
-            self.data[mrn]["test_results"].append((date, value))
-        else:
+        if mrn not in self.data:
             raise Exception('Error: Trying to set test results for a non-existing patient, MRN not found:', mrn)
         if self.data[mrn]["last_test"] is None:
             raise Exception('Error, last test date not found for patient:', mrn)
         if date > self.data[mrn]["last_test"]:
-            self.data[mrn]["test_results"][-2] = (date - self.data[mrn]["last_test"]).total_seconds() / (60*60*24)
+            strp_new_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+            last_date = datetime.strptime(self.data[mrn]["last_test"], '%Y-%m-%d %H:%M:%S')
+            self.data[mrn]["test_results"][-2] = (strp_new_date - last_date).total_seconds() / (60*60*24)
             self.data[mrn]["test_results"].append(0)
             self.data[mrn]["test_results"].append(value)
             self.data[mrn]["last_test"] = date
         else:
-            raise Exception('Error: Invalid new test date:', date)
+            raise Exception('Error: Test date is not in order:', date, self.data[mrn]["last_test"])
         print("Test result added successfully")
             
 
     def delete(self, mrn):
-        if mrn in self.data:
+        if mrn in self.data.keys():
             del self.data[mrn]
         else:
             raise Exception('Error: Trying to discharging test results for a non-existing patient, MRN not found:', mrn)
@@ -80,6 +81,12 @@ class Database:
         
 
     def register(self, mrn, gender, dob, name):
+        if gender not in [0, 1]:
+            raise Exception('Error: expected binary gender (0 for male or 1 for female) but found:', gender)
+        dob_datetime = datetime.strptime(dob, '%Y-%m-%d')
+        age = (datetime.now() - dob_datetime).days
+        if age < 0:
+            raise Exception('Error: Invalid date of birth:', dob)
         if mrn not in self.data:
             self.data[mrn] = {"test_results": [], "gender": gender, "dob": dob, "name":name, "last_test": None}
         else:

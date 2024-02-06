@@ -1,15 +1,16 @@
 import socket
-import http
-import urllib.request
 import time
+import urllib.request
 from enum import Enum
-
-from . import api
 
 class MLLPDelimiter(Enum):
     START_OF_BLOCK = 0x0b
     END_OF_BLOCK = 0x1c
     CARRIAGE_RETURN = 0x0d
+
+class PagerAPI(Enum):
+    PAGE = "/page"
+    SHUTDOWN = "/shutdown"
 
 class Communicator():
     def __init__(self, host=None, mllp_port=None, pager_port=None):
@@ -53,15 +54,14 @@ class Communicator():
 
     # Pager server
     def page(self, mrn):
+        mrn_bytes = bytes(mrn, "ascii")
         r = urllib.request.urlopen(
-            f"http://{self.host}:{self.pager_port}{api.PAGE}", 
-            data=mrn
+            f"http://{self.host}:{self.pager_port}{PagerAPI.PAGE.value}", 
+            data=mrn_bytes
         )
+        return r
 
-        if not r.status == http.HTTPStatus.OK:
-            raise Exception(f"Paging failed with status {r.status}")
-        
     def shutdown_sever(self):
         r = urllib.request.urlopen(
-            f"http://{self.host}:{self.pager_port}{api.SHUTDOWN}"
+            f"http://{self.host}:{self.pager_port}{PagerAPI.SHUTDOWN.value}"
         )

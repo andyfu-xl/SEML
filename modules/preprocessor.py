@@ -1,4 +1,4 @@
-from modules.database import Database
+from database import Database
 from datetime import datetime
 import torch
 
@@ -20,13 +20,13 @@ class Preprocessor():
         self.message = message
         self.check_message()
         # switch case for message type
-        if self.message.message_type == b'ADT^A01':
+        if self.message.message_type == 'ADT^A01':
             self.database.register(self.message.mrn, self.message.gender, self.message.dob, self.message.name)
             return
-        elif self.message.message_type == b'ADT^A03':
+        elif self.message.message_type == 'ADT^A03':
             self.database.delete(self.message.mrn)
             return
-        elif self.message.message_type == b'ORU^R01':
+        elif self.message.message_type == 'ORU^R01':
             patient_data = self.database.get(self.message.mrn)
             gender = patient_data['gender']
             dob = patient_data['dob']
@@ -38,17 +38,17 @@ class Preprocessor():
     def check_message(self):
         if self.message.mrn is None:
             raise Exception('Error: MRN not found in the message')
-        if self.message.message_type == b'ADT^A01':
+        if self.message.message_type == 'ADT^A01':
             if self.message.gender is None:
                 raise Exception('Error: Invalid message: no gender found')
             if self.message.dob is None:
                 raise Exception('Error: Invalid message: no date of birth found')
             if self.message.name is None:
                 raise Exception('Error: Invalid message: no name found')
-        elif self.message.message_type == b'ADT^A03':
+        elif self.message.message_type == 'ADT^A03':
             if self.message.mrn is None:
                 raise Exception('Error: Invalid message: no MRN found')
-        elif self.message.message_type == b'ORU^R01':
+        elif self.message.message_type == 'ORU^R01':
             if not self.message.obx_type == "CREATININE":
                 raise Exception('Error: Invalid message: invalid test type:', self.message.obx_type)
             elif self.message.obx_value is None:

@@ -3,23 +3,23 @@ import messagetypes
 
 class DataParser():
     def __init__(self):
-        self.ORU = b'ORU^R01'
-        self.A01 = b'ADT^A01'
-        self.A03 = b'ADT^A03'
-
-    def segment_message(self, message: bytes, segment=b'\r'):
-        segments = message.split(segment)
-        segments = [x for x in segments if x]
-        return segments
+        self.ORU = 'ORU^R01'
+        self.A01 = 'ADT^A01'
+        self.A03 = 'ADT^A03'
 
     def remove_start_and_end(self, message: bytes, start=b'\x0b', end=b'\x1c'):
         message = message.replace(start, b'', 1)
         message = message.replace(end, b'', 1)
         return message
+    
+    def segment_message(self, message: bytes, segment='\r'):
+        segments = message.split(segment)
+        segments = [x for x in segments if x]
+        return segments
 
     def get_message_type(self, message_segment: list):
         msh_segment = message_segment[0]
-        msg_type = msh_segment.split(b'|')[8]
+        msg_type = msh_segment.split('|')[8]
         if msg_type == self.ORU:
             return self.ORU
         elif msg_type == self.A01:
@@ -31,6 +31,7 @@ class DataParser():
 
     def parse_message(self, message: bytes):
         message = self.remove_start_and_end(message)
+        message = message.decode('utf-8')
         message_segments = self.segment_message(message)
         msg_type = self.get_message_type(message_segments)
         message_obj = None

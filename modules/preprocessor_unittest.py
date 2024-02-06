@@ -1,37 +1,37 @@
 import unittest
-from modules.database import Database
 from datetime import datetime
 import os
-from modules.preprocessor import Preprocessor, AGE_MEAN, AGE_STD, DATE_MEAN, DATE_STD, VALUE_MEAN, VALUE_STD
-import modules.messagetypes as messagetypes
 import torch
+from preprocessor import Preprocessor, AGE_MEAN, AGE_STD, DATE_MEAN, DATE_STD, VALUE_MEAN, VALUE_STD
+from database import Database
+import dataparser.messagetypes as messagetypes
 
 class TestPreprocessor(unittest.TestCase):
     def setUp(self):
         # create a simple csv file for testing
-        with open('data/history_test.csv', 'w') as f:
+        with open('../data/history_test.csv', 'w') as f:
             f.write('mrn,date1,result1,date2,result2,date3,result3\n')
             f.write('1,2020-01-01 00:00:00,1,2020-01-02 00:00:00,2\n')
             f.write('2,2020-01-01 00:00:00,1,2020-01-02 00:00:00,2,2020-01-03 00:00:00,3\n')
-        self.db = Database('data/history_test.csv')
+        self.db = Database('../data/history_test.csv')
         # delete the test file
-        os.remove('data/history_test.csv')
+        os.remove('../data/history_test.csv')
         self.preprocessor = Preprocessor(self.db)
         message1 = messagetypes.Adt_a01()
         message2 = messagetypes.Adt_a03()
         message3 = messagetypes.Adt_a01()
         message4 = messagetypes.Oru_r01()
-        message_segments = [b'MSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5', 
-                            b'PID|1||497030||ROSCOE DOHERTY||19870515|M']
+        message_segments = ['MSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5', 
+                            'PID|1||497030||ROSCOE DOHERTY||19870515|M']
         self.result1 = message1.process_message(message_segments)
-        message_segments = [b'MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5', 
-                            b'PID|1||497030']
+        message_segments = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5', 
+                            'PID|1||497030']
         self.result2 = message2.process_message(message_segments)
-        message_segments = [b'MSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5', 
-                            b'PID|1||1||ROSCOE DOHERTY||19870515|M']
+        message_segments = ['MSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5', 
+                            'PID|1||1||ROSCOE DOHERTY||19870515|M']
         self.result3 = message3.process_message(message_segments)
-        message_segments = [b'MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20200103000000||ORU^R01|||2.5', 
-                            b'PID|1||1', b'OBR|1||||||20200103000000', b'OBX|1|SN|CREATININE||3.0']
+        message_segments = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20200103000000||ORU^R01|||2.5', 
+                            'PID|1||1', 'OBR|1||||||20200103000000', 'OBX|1|SN|CREATININE||3.0']
         self.result4 = message4.process_message(message_segments)
 
     def test_preprocess(self):
@@ -56,7 +56,7 @@ class TestPreprocessor(unittest.TestCase):
         self.assertTrue(torch.allclose(output_tensor, expected_tensor, atol=1e-8))
 
 
-
-
+if __name__ == '__main__':
+    unittest.main()
 
     

@@ -1,4 +1,3 @@
-from database import Database
 from datetime import datetime
 import torch
 
@@ -17,8 +16,8 @@ STANDARDIZE_MEAN = [AGE_MEAN, 0, DATE_MEAN, VALUE_MEAN]
 STANDARDIZE_STD = [AGE_STD, 1, DATE_STD, VALUE_STD]
 
 class Preprocessor():
-    def __init__(self, Database):
-        self.database = Database
+    def __init__(self, database):
+        self.database = database
 
     def preprocess(self, message):
         self.message = message

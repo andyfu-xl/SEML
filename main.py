@@ -1,14 +1,18 @@
-import time
+import os
+import sys
+_ = [sys.path.insert(1, os.path.join(root, d)) for root, dirs, _ in os.walk(os.getcwd()) for d in dirs]
 
 from modules.communicator.communicator import Communicator
-# from modules.dataparser.dataparser import DataParser
-# from modules.preprocessor import Preprocessor
+from modules.dataparser.dataparser import DataParser
+from modules.database import Database
+from modules.preprocessor import Preprocessor
 # from modules.model import Model
 
 def main():
     communicator = Communicator("localhost", 8440)
-    # dataparser = DataParser()
-    # preprocessor = Preprocessor()
+    dataparser = DataParser()
+    database = Database()
+    preprocessor = Preprocessor(database)
     # model = Model()
     
     while True:
@@ -16,19 +20,17 @@ def main():
         message = communicator.receive()
         if message == None:
             break
-        print(message)
 
         # Pass the message to data parser
-        # TODO
-        # parsed_message = dataparser.parse(message)
+        parsed_message = dataparser.parse_message(message)
 
         # Process message
-        # TODO
-        # preprocessed_message = preprocessor.preprocess(parsed_message)
+        preprocessed_message = preprocessor.preprocess(parsed_message)
 
         # Perform inference
         # TODO
-        # has_aki, mrn = model.predict(preprocessed_message)
+        # if preprocessed_message is not None:
+            # has_aki, mrn = model.predict(preprocessed_message)
 
         # Page (if necessary)
         # TODO
@@ -37,7 +39,7 @@ def main():
 
         # Acknowledge message
         communicator.acknowledge()
-        time.sleep(1)
+        # time.sleep(1)
 
 if __name__ == "__main__":
     main()

@@ -12,8 +12,8 @@ DATE_MEAN = 19.595264259014705
 # the standard deviation of the interval between two tests in days
 DATE_STD = 56.37914791297929
 
-STANDARDIZE_MEAN = [AGE_MEAN, 0, DATE_MEAN, VALUE_MEAN]
-STANDARDIZE_STD = [AGE_STD, 1, DATE_STD, VALUE_STD]
+STANDARDIZE_MEAN = [DATE_MEAN, VALUE_MEAN, AGE_MEAN, 0]
+STANDARDIZE_STD = [DATE_STD, VALUE_STD, AGE_STD, 1]
 
 class Preprocessor():
     def __init__(self, database):
@@ -82,7 +82,7 @@ class Preprocessor():
         test_results = [float(x) for x in test_results]
         static_data = static_data.repeat(int(len(test_results)/2), 1)
         test_results = torch.tensor(test_results, dtype=torch.float32).view(-1, 2)
-        input_tensor = torch.cat((static_data, test_results), 1)
+        input_tensor = torch.cat((test_results, static_data), 1)
         return self.standardize_tensor(input_tensor)
 
     # standardize the tensor, using the mean and std computed from the training data

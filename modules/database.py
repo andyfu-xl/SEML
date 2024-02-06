@@ -9,7 +9,7 @@ class Database:
         if file_path is not None:
             self.load_csv(file_path)
     
-
+    # this function loads the data from a csv file, and stores it in a dictionary
     def load_csv(self, file_path):
         with open(file_path, newline='') as csvfile:
             reader = csv.reader(csvfile)
@@ -25,7 +25,9 @@ class Database:
                 else:
                     raise Exception('Duplicate MRN found:', mrn)        
 
-
+    # this function processes the dates in the csv file, and returns the time difference between the dates
+    # the date of the last test is used to update new test results
+    # the entire process maintains all the information about each patient, while converted to format that is easy to use
     def process_dates(self, test_results):
         if len(test_results) < 2 or len(test_results) % 2 != 0:
             raise Exception('Invalid test results length:', test_results)
@@ -49,12 +51,14 @@ class Database:
         test_results[-2] = 0
         return test_results, last_test
         
-
+    # This function returns the patient's data from the database
     def get(self, mrn):
         if mrn in self.data:
             return self.data[mrn]
 
-
+    # This function adds a new test result to the patient's data
+    # We do not accept new test results for patients who are not registered or have no historial test results
+    # We also do not accept test results that are not in order
     def set(self, mrn, date, value):
         if mrn not in self.data:
             raise Exception('Error: Trying to set test results for a non-existing patient, MRN not found:', mrn)
@@ -71,7 +75,7 @@ class Database:
             raise Exception('Error: Test date is not in order:', date, self.data[mrn]["last_test"])
         print("Test result added successfully")
             
-
+    # This function deletes the patient's data from the database
     def delete(self, mrn):
         if mrn in self.data.keys():
             del self.data[mrn]
@@ -79,7 +83,8 @@ class Database:
             raise Exception('Error: Trying to discharging test results for a non-existing patient, MRN not found:', mrn)
         print("Patient discharged successfully")
         
-
+    # This function registers patients.
+    # We accept patients who has no test results, or has test results in order
     def register(self, mrn, gender, dob, name):
         if gender not in [0, 1]:
             raise Exception('Error: expected binary gender (0 for male or 1 for female) but found:', gender)

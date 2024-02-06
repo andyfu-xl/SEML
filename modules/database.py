@@ -62,9 +62,12 @@ class Database:
     def set(self, mrn, date, value):
         if mrn not in self.data:
             raise Exception('Error: Trying to set test results for a non-existing patient, MRN not found:', mrn)
-        if self.data[mrn]["last_test"] is None:
+        if len(self.data[mrn]["test_results"]) == 0:
+            self.data[mrn]["test_results"] = [0, value]
+            self.data[mrn]["last_test"] = date
+        elif self.data[mrn]["last_test"] is None:
             raise Exception('Error, last test date not found for patient:', mrn)
-        if date > self.data[mrn]["last_test"]:
+        elif date > self.data[mrn]["last_test"]:
             strp_new_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
             last_date = datetime.strptime(self.data[mrn]["last_test"], '%Y-%m-%d %H:%M:%S')
             self.data[mrn]["test_results"][-2] = (strp_new_date - last_date).total_seconds() / (60*60*24)

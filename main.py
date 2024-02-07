@@ -7,15 +7,14 @@ from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
 from modules.database import Database
 from modules.preprocessor import Preprocessor
-from modules.model import LSTMModel
-from modules.model_utils import inference
+from modules.model import load_model, inference
 
 def main():
     communicator = Communicator("localhost", 8440)
     dataparser = DataParser()
     database = Database()
     preprocessor = Preprocessor(database)
-    model = LSTMModel(input_dim=4, hidden_dim=64, output_dim=2, num_layers=2, model_path="./lstm_model.pth")
+    model = load_model('./lstm_model.pth')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     while True:
@@ -30,8 +29,10 @@ def main():
 
         # Process message
         preprocessed_message = preprocessor.preprocess(parsed_message)
+        print(preprocessed_message, "preprocessed_message")
 
         # Perform inference
+        has_aki = False
         if preprocessed_message is not None:
             has_aki = int(inference(model, preprocessed_message, device))
 

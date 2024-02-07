@@ -76,7 +76,7 @@ class Database:
             self.data[mrn]["last_test"] = date
         else:
             raise Exception('Error: Test date is not in order:', date, self.data[mrn]["last_test"])
-        print("Test result added successfully")
+        # print("Test result added successfully")
             
     # This function deletes the patient's data from the database
     def delete(self, mrn):
@@ -84,7 +84,7 @@ class Database:
             del self.data[mrn]
         else:
             raise Exception('Error: Trying to discharging test results for a non-existing patient, MRN not found:', mrn)
-        print("Patient discharged successfully")
+        # print("Patient discharged successfully")
         
     # This function registers patients.
     # We accept patients who has no test results, or has test results in order
@@ -101,4 +101,4 @@ class Database:
             self.data[mrn]["gender"] = gender
             self.data[mrn]["dob"] = dob
             self.data[mrn]["name"] = name
-        print("Patient registered successfully")
+        # print("Patient registered successfully")

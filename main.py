@@ -1,20 +1,22 @@
 import os
 import sys
+import torch
 _ = [sys.path.insert(1, os.path.join(root, d)) for root, dirs, _ in os.walk(os.getcwd()) for d in dirs]
 
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
 from modules.database import Database
 from modules.preprocessor import Preprocessor
-# from modules.model import Model
+from modules.model import load_model, inference
 
 def main():
-    communicator = Communicator("localhost", 8440)
+    communicator = Communicator("localhost", 8440, 8441)
     dataparser = DataParser()
     database = Database()
     preprocessor = Preprocessor(database)
-    # model = Model()
-    
+    model = load_model('./lstm_model.pth')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     while True:
         # Receive message
         message = communicator.receive()
@@ -23,23 +25,23 @@ def main():
 
         # Pass the message to data parser
         parsed_message = dataparser.parse_message(message)
+        mrn = parsed_message.mrn
 
         # Process message
         preprocessed_message = preprocessor.preprocess(parsed_message)
 
         # Perform inference
-        # TODO
-        # if preprocessed_message is not None:
-            # has_aki, mrn = model.predict(preprocessed_message)
+        has_aki = False
+        if preprocessed_message is not None:
+            has_aki = int(inference(model, preprocessed_message, device))
 
         # Page (if necessary)
-        # TODO
-        # if has_aki:
-        #     communicator.page(mrn)
+        if has_aki:
+            print(f"ALERT: Patient {mrn} has AKI")
+            communicator.page(mrn)
 
         # Acknowledge message
         communicator.acknowledge()
-        # time.sleep(1)
 
 if __name__ == "__main__":
     main()

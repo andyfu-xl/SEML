@@ -110,4 +110,4 @@ def inference(model, input_data, device):
 		input_data = input_data.to(device)
 		outputs = model(input_data)
 		predicted = torch.sigmoid(outputs).round()
-		return predicted.cpu().numpy()[0][1]
+		return int(predicted.cpu().numpy()[0][1])

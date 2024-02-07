@@ -50,11 +50,11 @@ class TestModel(unittest.TestCase):
 	def test_correct_inference(self):
 		standardized_input = self.standardize_tensor(self.input_2)
 		# Test if the model can correctly classify the input data
-		predicted = int(inference(self.model, standardized_input, self.device))
+		predicted = inference(self.model, standardized_input, self.device)
 		self.assertEqual(predicted, 1)
 
 		standardized_input = self.standardize_tensor(self.input_3)
-		predicted = int(inference(self.model, standardized_input, self.device))
+		predicted = inference(self.model, standardized_input, self.device)
 		self.assertEqual(predicted, 0)
 
 	def standardize_tensor(self, input_tensor):

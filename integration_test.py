@@ -29,7 +29,7 @@ class SystemIntegrationTest(unittest.TestCase):
         self.ORU_R01_db_entry = {
             "dob": "1984-02-03",
             "gender": 1,
-            "last_test": None,
+            "last_test": '2024-01-20 22:04:03',
             "name": "ELIZABETH HOLMES",
             "test_results": [0, 103.4]
         }
@@ -99,7 +99,7 @@ class SystemIntegrationTest(unittest.TestCase):
         self.assertEqual(db.get("478237423"), self.ORU_R01_db_entry)
 
     # Test integration of whole system
-    def test_integration_admission(self):
+    def test_integration_admission_and_discharge(self):
         communicator = Communicator("localhost", TEST_MLLP_PORT, TEST_PAGER_PORT)
         dataparser = DataParser()
         database = Database()
@@ -108,22 +108,62 @@ class SystemIntegrationTest(unittest.TestCase):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         has_aki = None
 
-        message = communicator.receive()
-        if message == None:
-            assert False
-        parsed_message = dataparser.parse_message(message)
-        mrn = parsed_message.mrn
-        preprocessed_message = preprocessor.preprocess(parsed_message)
-        if preprocessed_message is not None:
-            has_aki = inference(model, preprocessed_message, device)
-        communicator.acknowledge()
+        num_message = 0
+        while True:
+            message = communicator.receive()
+            if message == None:
+                break
+            parsed_message = dataparser.parse_message(message)
+            mrn = parsed_message.mrn
+            preprocessed_message = preprocessor.preprocess(parsed_message)
+            if preprocessed_message is not None:
+                has_aki = inference(model, preprocessed_message, device)
+            communicator.acknowledge()
+
+            if num_message == 0:
+                self.assertEqual(mrn, "478237423")
+                self.assertEqual(preprocessed_message, None)
+                self.assertEqual(database.get(mrn), self.ADT_A01_db_entry)
+                self.assertEqual(has_aki, None)
+            num_message += 1
+
         communicator.close()
 
         self.assertEqual(mrn, "478237423")
         self.assertEqual(preprocessed_message, None)
-        self.assertEqual(database.get(mrn), self.ADT_A01_db_entry)
-        self.assertEqual(has_aki, None)
+        self.assertEqual(database.get(mrn), None)
+        self.assertEqual(has_aki, 0)
 
+    def test_integration_admission_without_aki_no_page(self):
+        communicator = Communicator("localhost", TEST_MLLP_PORT, TEST_PAGER_PORT)
+        dataparser = DataParser()
+        database = Database()
+        preprocessor = Preprocessor(database)
+        model = load_model("./lstm_model.pth")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        has_aki = None
+        page_response = None
+
+        for _ in range(2):
+            message = communicator.receive()
+            if message == None:
+                assert False
+            parsed_message = dataparser.parse_message(message)
+            mrn = parsed_message.mrn
+            preprocessed_message = preprocessor.preprocess(parsed_message)
+            if preprocessed_message is not None:
+                has_aki = inference(model, preprocessed_message, device)
+            if has_aki:
+                page_response = communicator.page(mrn)
+            communicator.acknowledge()
+        communicator.close()
+
+        self.assertEqual(mrn, "478237423")
+        self.assertEqual(database.get(mrn), self.ORU_R01_db_entry)
+        self.assertEqual(has_aki, 0)
+        self.assertEqual(page_response, None)
+
+    # TODO: Find ORU R01 message with AKI
     # def test_integration_admission_with_aki_page(self):
     #     communicator = Communicator("localhost", TEST_MLLP_PORT, TEST_PAGER_PORT)
     #     dataparser = DataParser()
@@ -149,68 +189,9 @@ class SystemIntegrationTest(unittest.TestCase):
     #     communicator.close()
 
     #     self.assertEqual(mrn, "478237423")
-    #     self.assertEqual(preprocessed_message, None)
     #     self.assertEqual(database.get(mrn), self.ORU_R01_db_entry)
     #     self.assertEqual(has_aki, 1)
     #     self.assertEqual(page_response.status, http.HTTPStatus.OK)
-
-    # def test_integration_admission_without_aki_no_page(self):
-    #     communicator = Communicator("localhost", TEST_MLLP_PORT, TEST_PAGER_PORT)
-    #     dataparser = DataParser()
-    #     database = Database()
-    #     preprocessor = Preprocessor(database)
-    #     model = load_model("./lstm_model.pth")
-    #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #     has_aki = None
-    #     page_response = None
-
-    #     for _ in range(2):
-    #         message = communicator.receive()
-    #         if message == None:
-    #             assert False
-    #         parsed_message = dataparser.parse_message(message)
-    #         mrn = parsed_message.mrn
-    #         preprocessed_message = preprocessor.preprocess(parsed_message)
-    #         if preprocessed_message is not None:
-    #             has_aki = inference(model, preprocessed_message, device)
-    #         if has_aki:
-    #             page_response = communicator.page(mrn)
-    #         communicator.acknowledge()
-    #     communicator.close()
-
-    #     self.assertEqual(mrn, "478237423")
-    #     self.assertEqual(preprocessed_message, None)
-    #     self.assertEqual(database.get(mrn), self.ORU_R01_db_entry)
-    #     self.assertEqual(has_aki, 0)
-    #     self.assertEqual(page_response, None)
-
-    def test_integration_admission_and_discharge(self):
-        communicator = Communicator("localhost", TEST_MLLP_PORT, TEST_PAGER_PORT)
-        dataparser = DataParser()
-        database = Database()
-        preprocessor = Preprocessor(database)
-        model = load_model("./lstm_model.pth")
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        has_aki = None
-
-        try:
-            while True:
-                message = communicator.receive()
-                if message == None:
-                    break
-                parsed_message = dataparser.parse_message(message)
-                mrn = parsed_message.mrn
-                preprocessed_message = preprocessor.preprocess(parsed_message)
-                # if preprocessed_message is not None:
-                #     has_aki = inference(model, preprocessed_message, device)
-                communicator.acknowledge()
-        finally:
-            communicator.close()
-
-        self.assertEqual(mrn, "478237423")
-        self.assertEqual(preprocessed_message, None)
-        self.assertEqual(database.get(mrn), None)
-        self.assertEqual(has_aki, None)
 
     def tearDown(self):
         try:

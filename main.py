@@ -10,7 +10,7 @@ from modules.preprocessor import Preprocessor
 from modules.model import load_model, inference
 
 def main():
-    communicator = Communicator("localhost", 8440)
+    communicator = Communicator("localhost", 8440, 8441)
     dataparser = DataParser()
     database = Database()
     preprocessor = Preprocessor(database)
@@ -29,7 +29,6 @@ def main():
 
         # Process message
         preprocessed_message = preprocessor.preprocess(parsed_message)
-        print(preprocessed_message, "preprocessed_message")
 
         # Perform inference
         has_aki = False
@@ -38,6 +37,7 @@ def main():
 
         # Page (if necessary)
         if has_aki:
+            print(f"ALERT: Patient {mrn} has AKI")
             communicator.page(mrn)
 
         # Acknowledge message

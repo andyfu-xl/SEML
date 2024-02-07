@@ -73,9 +73,9 @@ class TestPreprocessor(unittest.TestCase):
         standardized_test_result1 = (1.0 - VALUE_MEAN) / VALUE_STD
         standardized_test_result2 = (2.0 - VALUE_MEAN) / VALUE_STD
         standardized_test_result3 = (3.0 - VALUE_MEAN) / VALUE_STD
-        expected_tensor = torch.tensor([[standardized_age, 0, time_interval, standardized_test_result1],
-                                        [standardized_age, 0, time_interval, standardized_test_result2],
-                                        [standardized_age, 0, (0-DATE_MEAN)/DATE_STD, standardized_test_result3]])
+        expected_tensor = torch.tensor([[ time_interval, standardized_test_result1,standardized_age, 0],
+                                        [time_interval, standardized_test_result2,standardized_age, 0, ],
+                                        [(0-DATE_MEAN)/DATE_STD, standardized_test_result3, standardized_age, 0,]])
         self.assertTrue(torch.allclose(output_tensor, expected_tensor, atol=1e-8))
 
         # test if the preprocessor limits the number of test results to 9

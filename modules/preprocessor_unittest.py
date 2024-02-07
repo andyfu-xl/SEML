@@ -63,7 +63,7 @@ class TestPreprocessor(unittest.TestCase):
         # test if the preprocessor returns the correct tensor
         output_tensor = self.preprocessor.preprocess(self.result4)
         self.assertIsInstance(output_tensor, torch.Tensor)
-        self.assertEqual(output_tensor.shape, torch.Size([3, 4]))
+        self.assertEqual(output_tensor.shape, torch.Size([1, 3, 4]))
         # standardized age
         age = (datetime.now() - datetime.strptime(self.result3.dob, '%Y-%m-%d')).days / 365.25
         standardized_age = (age - AGE_MEAN) / AGE_STD
@@ -73,15 +73,15 @@ class TestPreprocessor(unittest.TestCase):
         standardized_test_result1 = (1.0 - VALUE_MEAN) / VALUE_STD
         standardized_test_result2 = (2.0 - VALUE_MEAN) / VALUE_STD
         standardized_test_result3 = (3.0 - VALUE_MEAN) / VALUE_STD
-        expected_tensor = torch.tensor([[ time_interval, standardized_test_result1,standardized_age, 0],
+        expected_tensor = torch.tensor([[[ time_interval, standardized_test_result1,standardized_age, 0],
                                         [time_interval, standardized_test_result2,standardized_age, 0, ],
-                                        [(0-DATE_MEAN)/DATE_STD, standardized_test_result3, standardized_age, 0,]])
+                                        [(0-DATE_MEAN)/DATE_STD, standardized_test_result3, standardized_age, 0,]]])
         self.assertTrue(torch.allclose(output_tensor, expected_tensor, atol=1e-8))
 
         # test if the preprocessor limits the number of test results to 9
         self.preprocessor.preprocess(self.result5)
         output_tensor = self.preprocessor.preprocess(self.result6)
-        self.assertEqual(output_tensor.shape, torch.Size([9, 4]))
+        self.assertEqual(output_tensor.shape, torch.Size([1, 9, 4]))
 
 
 

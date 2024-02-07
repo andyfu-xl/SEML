@@ -43,7 +43,7 @@ class Preprocessor():
             # only look at the last 9 test results
             if len(test_results) > 18:
                 test_results = test_results[-18:]
-            input_tensor = self.to_tensor(gender=gender, dob=dob, test_results=test_results)
+            input_tensor = self.to_tensor(gender=gender, dob=dob, test_results=test_results).view(1, -1, 4)
             return input_tensor
     
     # this is a helper function to check if the message is valid

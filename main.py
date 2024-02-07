@@ -1,6 +1,7 @@
 import os
 import sys
 import torch
+import time
 _ = [sys.path.insert(1, os.path.join(root, d)) for root, dirs, _ in os.walk(os.getcwd()) for d in dirs]
 
 from modules.communicator.communicator import Communicator
@@ -17,8 +18,10 @@ def main():
     model = load_model('./lstm_model.pth')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    iteration_timings = []
     while True:
         # Receive message
+        start = time.time()
         message = communicator.receive()
         if message == None:
             break
@@ -37,11 +40,17 @@ def main():
 
         # Page (if necessary)
         if has_aki:
-            print(f"ALERT: Patient {mrn} has AKI")
+            # print(f"ALERT: Patient {mrn} has AKI")
             communicator.page(mrn)
 
         # Acknowledge message
         communicator.acknowledge()
-
+        end = time.time()
+        execution_time = end - start
+        iteration_timings.append(execution_time)
+    
+    print(f"Fastest iteration: {min(iteration_timings)}")
+    print(f'Average iteration: {sum(iteration_timings) / len(iteration_timings)}')
+    print(f"Slowest iteration: {max(iteration_timings)}")
 if __name__ == "__main__":
     main()

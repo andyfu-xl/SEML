@@ -1,3 +1,4 @@
+import csv
 import torch
 import torch.nn as nn
 from tqdm import tqdm
@@ -109,6 +110,14 @@ def inference(model, input_data, device):
 	with torch.no_grad():
 		input_data = input_data.to(device)
 		outputs = model(input_data)
-		#print(torch.sigmoid(outputs))
 		predicted = torch.sigmoid(outputs).round()
 		return int(predicted.cpu().numpy()[0][1])
+	
+def save_inference_results(pred_labels, dates, output_path):
+    print("Saving the inference results...")
+    w = csv.writer(open(output_path, "w"))
+    w.writerow(("mrn","date"))
+    for i in range(len(pred_labels)):	
+        w.writerow([pred_labels[i], dates[i]])
+    print("The inference results have been saved to", output_path)
+

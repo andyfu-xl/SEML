@@ -194,7 +194,7 @@ class SystemIntegrationTest(unittest.TestCase):
     #     self.assertEqual(has_aki, 1)
     #     self.assertEqual(page_response.status, http.HTTPStatus.OK)
 
-    def test_integration_model_f3(self): # python3 -m unittest integration_test.SystemIntegrationTest.test_integration_model_f3
+    def test_integration_model(self): # python3 -m unittest integration_test.SystemIntegrationTest.test_integration_model
         communicator = Communicator("localhost", 8440, 8441)
         dataparser = DataParser()
         database = Database()
@@ -219,21 +219,20 @@ class SystemIntegrationTest(unittest.TestCase):
 
             # Process message
             preprocessed_message = preprocessor.preprocess(parsed_message)
-            if mrn == "701783" and parsed_message.message_type == 'ORU^R01':
-                print(preprocessed_message, date)
+            # if mrn == "701783" and parsed_message.message_type == 'ORU^R01':
+            #     print(preprocessed_message, date)
 
             # Perform inference
             has_aki = False
-            if preprocessed_message is not None and preprocessed_message.shape[1] > 1:
+            if preprocessed_message is not None:
                 has_aki = int(inference(model, preprocessed_message, device))
             
             # Page (if necessary)
-            if has_aki:
-                #print(f"ALERT: Patient {mrn} has AKI")
+            if has_aki and mrn not in mrn_aki:
+                print(f"ALERT: Patient {mrn} has AKI")
                 communicator.page(mrn)
-                if mrn not in mrn_aki:
-                    mrn_aki.append(mrn)
-                    date_aki.append(date)
+                mrn_aki.append(mrn)
+                date_aki.append(date)
 
             # Acknowledge message
             communicator.acknowledge()
@@ -241,7 +240,7 @@ class SystemIntegrationTest(unittest.TestCase):
     def save_inference_results(self, pred_labels, dates, output_path):
         print("Saving the inference results...")
         w = csv.writer(open(output_path, "w"))
-        w.writerow(("mrn","date"))
+        w.writerow(("mrn", "date"))
         for i in range(len(pred_labels)):
             w.writerow([pred_labels[i], dates[i]])
         print("The inference results have been saved to", output_path)
@@ -266,7 +265,7 @@ class SystemIntegrationTest(unittest.TestCase):
             else:
                 false_positives.append(p)
         beta = 3
-        print(positive)
+        #print(positive)
         precision = len(true_positives) / (len(true_positives) + len(false_positives))
         recall = len(true_positives) / len(positive)
         f3 = ((1 + beta**2) * (precision * recall)) / ((beta**2 * precision) + recall)

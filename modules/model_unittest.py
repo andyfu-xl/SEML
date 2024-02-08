@@ -18,7 +18,7 @@ STANDARDIZE_STD = [DATE_STD, VALUE_STD, AGE_STD, 1]
 class TestModel(unittest.TestCase):
 	def setUp(self):
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-		self.model = load_model('../lstm_model.pth')
+		self.model = load_model('../lstm_model_new.pth')
 		#LSTMModel(input_dim=4, hidden_dim=64, output_dim=2, num_layers=2)
 		# Load the model's state dictionary
 		#self.model.load_state_dict(torch.load('../lstm_model.pth'))

@@ -194,7 +194,8 @@ class SystemIntegrationTest(unittest.TestCase):
     #     self.assertEqual(has_aki, 1)
     #     self.assertEqual(page_response.status, http.HTTPStatus.OK)
 
-    def test_integration_model(self): # python3 -m unittest integration_test.SystemIntegrationTest.test_integration_model
+    # python3 -m unittest integration_test.SystemIntegrationTest.test_integration_model
+    def test_integration_model(self): 
         communicator = Communicator("localhost", 8440, 8441)
         dataparser = DataParser()
         database = Database()

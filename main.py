@@ -11,13 +11,14 @@ from modules.preprocessor import Preprocessor
 from modules.model import load_model, inference, save_inference_results
 
 def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     communicator = Communicator("localhost", 8440, 8441)
     dataparser = DataParser()
     database = Database()
     database.load_csv('./data/history.csv')
     preprocessor = Preprocessor(database)
     model = load_model('./lstm_model_new.pth')
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
     mrn_aki = []
     date_aki = []
     while True:
@@ -41,12 +42,13 @@ def main():
         # Perform inference
         has_aki = False
         if preprocessed_message is not None:
-            has_aki = int(inference(model, preprocessed_message, device))
+            has_aki = int(inference(model, preprocessed_message))
         
         # Page (if necessary)
         if has_aki and mrn not in mrn_aki:
             print(f"ALERT: Patient {mrn} has AKI")
             communicator.page(mrn)
+
             mrn_aki.append(mrn)
             date_aki.append(date)
 

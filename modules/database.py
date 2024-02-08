@@ -1,7 +1,6 @@
 import csv
 import csv
 from datetime import datetime
-import torch
 
 class Database:
     def __init__(self, file_path=None):
@@ -21,7 +20,7 @@ class Database:
                 if mrn not in self.data:
                     test_results, last_test = self.process_dates(row[1:])
                     test_results = [float(x) for x in test_results]
-                    self.data[mrn] = {"test_results": test_results, "gender" : None, "dob" : None, "name" : None, "last_test" : last_test}
+                    self.data[mrn] = {"test_results": test_results, "gender" : None, "dob" : None, "name" : None, "last_test" : last_test, "paged": False}
                 else:
                     raise Exception('Duplicate MRN found:', mrn)        
 
@@ -96,9 +95,16 @@ class Database:
         if age < 0:
             raise Exception('Error: Invalid date of birth:', dob)
         if mrn not in self.data:
-            self.data[mrn] = {"test_results": [], "gender": gender, "dob": dob, "name":name, "last_test": None}
+            self.data[mrn] = {"test_results": [], "gender": gender, "dob": dob, "name":name, "last_test": None, "paged": False}
         else:
             self.data[mrn]["gender"] = gender
             self.data[mrn]["dob"] = dob
             self.data[mrn]["name"] = name
         # print("Patient registered successfully")
+            
+    # This function pages the patient, we only have to page a patient once.
+    def paged(self, mrn):
+        if mrn in self.data:
+            self.data[mrn]["paged"] = True
+        else:
+            raise Exception('Error: Trying to page a non-existing patient, MRN not found:', mrn)

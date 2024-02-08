@@ -34,6 +34,9 @@ class Preprocessor():
         # test result
         elif self.message.message_type == 'ORU^R01':
             patient_data = self.database.get(self.message.mrn)
+            # we do not have to page a patient twice
+            if patient_data["paged"]:
+                return None
             gender = patient_data['gender']
             dob = patient_data['dob']
             if gender is None or dob is None:

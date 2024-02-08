@@ -16,8 +16,8 @@ def main():
     database = Database()
     database.load_csv('./data/history.csv')
     preprocessor = Preprocessor(database)
-    model = load_model('./lstm_model_new.pth')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = load_model('./lstm_model_new.pth').to(device)
     mrn_aki = []
     date_aki = []
     while True:
@@ -29,6 +29,7 @@ def main():
 
         # Pass the message to data parser
         parsed_message = dataparser.parse_message(message)
+        
         mrn = parsed_message.mrn
         if parsed_message.message_type == 'ORU^R01':
             date = parsed_message.obr_timestamp
@@ -41,14 +42,15 @@ def main():
         # Perform inference
         has_aki = False
         if preprocessed_message is not None:
-            has_aki = int(inference(model, preprocessed_message, device))
+            has_aki = int(inference(model, preprocessed_message.to(device)))
         
         # Page (if necessary)
-        if has_aki and mrn not in mrn_aki:
+        if has_aki:
             print(f"ALERT: Patient {mrn} has AKI")
             communicator.page(mrn)
             mrn_aki.append(mrn)
             date_aki.append(date)
+            database.paged(mrn)
 
         # Acknowledge message
         communicator.acknowledge()

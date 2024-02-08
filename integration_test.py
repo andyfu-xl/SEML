@@ -14,7 +14,7 @@ from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
 from modules.preprocessor import Preprocessor
 from modules.database import Database
-from modules.model import inference, load_model
+from modules.model import inference, load_model, save_inference_results
 from simulator_test import ADT_A01, ADT_A03, ORU_R01, TEST_MLLP_PORT, TEST_PAGER_PORT, wait_until_healthy, from_mllp, to_mllp
 
 class SystemIntegrationTest(unittest.TestCase):
@@ -208,7 +208,7 @@ class SystemIntegrationTest(unittest.TestCase):
             # Receive message
             message = communicator.receive()
             if message == None:
-                self.save_inference_results(mrn_aki, date_aki, "mrn_aki.csv")
+                save_inference_results(mrn_aki, date_aki, "mrn_aki.csv")
                 break
 
             # Pass the message to data parser
@@ -236,14 +236,6 @@ class SystemIntegrationTest(unittest.TestCase):
 
             # Acknowledge message
             communicator.acknowledge()
-
-    def save_inference_results(self, pred_labels, dates, output_path):
-        print("Saving the inference results...")
-        w = csv.writer(open(output_path, "w"))
-        w.writerow(("mrn", "date"))
-        for i in range(len(pred_labels)):
-            w.writerow([pred_labels[i], dates[i]])
-        print("The inference results have been saved to", output_path)
 
     def test_check_accuracy(self, pred_file_path="mrn_aki.csv", positive_file_path = "data/aki.csv"):
         pred = set()

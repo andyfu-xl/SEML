@@ -44,7 +44,6 @@ def main():
         
         # Page (if necessary)
         if has_aki:
-            print(f"ALERT: Patient {mrn} has AKI")
             communicator.page(mrn)
             database.paged(mrn)
 

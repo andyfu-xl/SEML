@@ -167,38 +167,6 @@ class SystemIntegrationTest(unittest.TestCase):
         self.assertEqual(has_aki, 0)
         self.assertEqual(page_response, None)
 
-    def test_integration_model_f3(self): # python3 -m unittest integration_test.SystemIntegrationTest.test_integration_model_f3
-        communicator = Communicator(mllp_address=f"localhost:{TEST_MLLP_PORT}", pager_address=f"localhost:{TEST_PAGER_PORT}")
-        dataparser = DataParser()
-        database = Database()
-        database.load_csv('./data/history.csv')
-        preprocessor = Preprocessor(database)
-        model = load_model(self.SAVED_MODEL_PATH)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        mrn_aki = []
-        date_aki = []
-        while True:
-            # Receive message
-            message = communicator.receive()
-            if message == None:
-                self.save_inference_results(mrn_aki, date_aki, "mrn_aki.csv")
-                break
-
-            # Pass the message to data parser
-            parsed_message = dataparser.parse_message(message)
-            mrn = parsed_message.mrn
-            if parsed_message.message_type == 'ORU^R01':
-                date = parsed_message.obr_timestamp
-
-            # Process message
-            preprocessed_message = preprocessor.preprocess(parsed_message)
-            if mrn == "701783" and parsed_message.message_type == 'ORU^R01':
-                print(preprocessed_message, date)
-
-        self.assertEqual(mrn, "478237423")
-        self.assertEqual(database.get(mrn), self.ORU_R01_db_entry)
-        self.assertEqual(has_aki, 1)
-        self.assertEqual(page_response.status, http.HTTPStatus.OK)
 
     def test_check_accuracy(self, pred_file_path="mrn_aki.csv", positive_file_path = "data/aki.csv"):
         pred = set()

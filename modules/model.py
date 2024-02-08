@@ -42,7 +42,7 @@ def inference(model, input_data):
 	with torch.no_grad():
 		outputs = model(input_data)
 		predicted = torch.sigmoid(outputs).round()
-		return int(predicted.cpu().numpy()[0][1])
+		return int(predicted.cpu().tolist()[0][1])
 	
 def save_inference_results(pred_labels, dates, output_path):
     print("Saving the inference results...")

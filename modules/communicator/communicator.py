@@ -13,23 +13,29 @@ class PagerAPI(Enum):
     SHUTDOWN = "/shutdown"
 
 class Communicator():
-    def __init__(self, host=None, mllp_port=None, pager_port=None):
+    def __init__(self, mllp_address=None, pager_address=None):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.host = host
-        self.pager_port = pager_port
 
-        if host is not None and mllp_port is not None:
-            self.connect(host, mllp_port)
+        if pager_address is not None:
+            self.pager_address = pager_address.replace("https://", "").replace("http://", "")
+
+        if mllp_address is not None:
+            self.mllp_address = mllp_address.replace("https://", "").replace("http://", "")
+            self.connect(mllp_address)
 
     # MLLP server
-    def connect(self, host, port):
-        self.socket.connect((host, port))
+    def connect(self, mllp_address):
+        host, port = mllp_address.split(":")
+        self.socket.connect((host, int(port)))
 
     def receive(self):
-        buffer = self.socket.recv(1024)
-        if len(buffer) == 0:
-            return None
-        return buffer
+        message = b""
+        while MLLPDelimiter.END_OF_BLOCK.value not in message:
+            buffer = self.socket.recv(1024)
+            if len(buffer) == 0:
+                return None
+            message += buffer
+        return message
     
     def acknowledge(self):
         current_time = time.strftime("%Y%m%d%H%M%S")
@@ -49,19 +55,17 @@ class Communicator():
         m += bytes(chr(MLLPDelimiter.END_OF_BLOCK.value) + chr(MLLPDelimiter.CARRIAGE_RETURN.value), "ascii")
         return m
     
-    def from_mllp(self, buffer):
-        return str(buffer[1:-3], "ascii").split("\r")
-
     # Pager server
     def page(self, mrn):
         mrn_bytes = bytes(mrn, "ascii")
         r = urllib.request.urlopen(
-            f"http://{self.host}:{self.pager_port}{PagerAPI.PAGE.value}", 
+            f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
             data=mrn_bytes
         )
         return r
 
     def shutdown_sever(self):
         r = urllib.request.urlopen(
-            f"http://{self.host}:{self.pager_port}{PagerAPI.SHUTDOWN.value}"
+            f"http://{self.pager_address}{PagerAPI.SHUTDOWN.value}"
         )
+

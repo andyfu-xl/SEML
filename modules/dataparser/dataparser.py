@@ -1,5 +1,4 @@
-import messagetypes
-# from preprocessor import Preprocessor
+from . import messagetypes
 
 class DataParser():
     def __init__(self):

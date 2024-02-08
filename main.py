@@ -1,18 +1,20 @@
-import os
-import sys
-import csv
+#!/usr/bin/env python3
+import argparse
 import torch
-_ = [sys.path.insert(1, os.path.join(root, d)) for root, dirs, _ in os.walk(os.getcwd()) for d in dirs]
 
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
 from modules.database import Database
 from modules.preprocessor import Preprocessor
-from modules.model import load_model, inference, save_inference_results
+from modules.model import load_model, inference
 
 def main():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    communicator = Communicator("localhost", 8440, 8441)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mllp', type=str, help="Port on which to receive HL7 messages via MLLP")
+    parser.add_argument('--pager', type=str, help="Port on which to page requests via HTTP")
+    flags = parser.parse_args()
+
+    communicator = Communicator(flags.mllp, flags.pager)
     dataparser = DataParser()
     database = Database()
     database.load_csv('./data/history.csv')
@@ -24,6 +26,7 @@ def main():
         # Receive message
         message = communicator.receive()
         if message == None:
+            communicator.close()
             break
 
         # Pass the message to data parser
@@ -41,13 +44,11 @@ def main():
         
         # Page (if necessary)
         if has_aki:
-            print(f"ALERT: Patient {mrn} has AKI")
             communicator.page(mrn)
             database.paged(mrn)
 
         # Acknowledge message
         communicator.acknowledge()
-
 
 if __name__ == "__main__":
     main()

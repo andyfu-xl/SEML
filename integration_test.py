@@ -1,5 +1,6 @@
 import os
 import sys
+import csv
 import time
 import http
 import torch
@@ -193,6 +194,87 @@ class SystemIntegrationTest(unittest.TestCase):
     #     self.assertEqual(has_aki, 1)
     #     self.assertEqual(page_response.status, http.HTTPStatus.OK)
 
+    def test_integration_model(self): # python3 -m unittest integration_test.SystemIntegrationTest.test_integration_model
+        communicator = Communicator("localhost", 8440, 8441)
+        dataparser = DataParser()
+        database = Database()
+        database.load_csv('./data/history.csv')
+        preprocessor = Preprocessor(database)
+        model = load_model('./lstm_model_new.pth')
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        mrn_aki = []
+        date_aki = []
+        while True:
+            # Receive message
+            message = communicator.receive()
+            if message == None:
+                self.save_inference_results(mrn_aki, date_aki, "mrn_aki.csv")
+                break
+
+            # Pass the message to data parser
+            parsed_message = dataparser.parse_message(message)
+            mrn = parsed_message.mrn
+            if parsed_message.message_type == 'ORU^R01':
+                date = parsed_message.obr_timestamp
+
+            # Process message
+            preprocessed_message = preprocessor.preprocess(parsed_message)
+            # if mrn == "701783" and parsed_message.message_type == 'ORU^R01':
+            #     print(preprocessed_message, date)
+
+            # Perform inference
+            has_aki = False
+            if preprocessed_message is not None:
+                has_aki = int(inference(model, preprocessed_message, device))
+            
+            # Page (if necessary)
+            if has_aki and mrn not in mrn_aki:
+                print(f"ALERT: Patient {mrn} has AKI")
+                communicator.page(mrn)
+                mrn_aki.append(mrn)
+                date_aki.append(date)
+
+            # Acknowledge message
+            communicator.acknowledge()
+
+    def save_inference_results(self, pred_labels, dates, output_path):
+        print("Saving the inference results...")
+        w = csv.writer(open(output_path, "w"))
+        w.writerow(("mrn", "date"))
+        for i in range(len(pred_labels)):
+            w.writerow([pred_labels[i], dates[i]])
+        print("The inference results have been saved to", output_path)
+
+    def test_check_accuracy(self, pred_file_path="mrn_aki.csv", positive_file_path = "data/aki.csv"):
+        pred = set()
+        with open(pred_file_path, "r") as f:
+            for line in f:
+                pred.add(line.strip())#.split(",")[0])
+        positive = set()
+        with open(positive_file_path, "r") as f:
+            for line in f:
+                positive.add(line.strip())#.split(",")[0])
+        
+        true_positives = []
+        false_positives = []
+
+        for p in pred:
+            if p in positive:
+                true_positives.append(p)
+                #positive.remove(p)
+            else:
+                false_positives.append(p)
+        beta = 3
+        #print(positive)
+        precision = len(true_positives) / (len(true_positives) + len(false_positives))
+        recall = len(true_positives) / len(positive)
+        f3 = ((1 + beta**2) * (precision * recall)) / ((beta**2 * precision) + recall)
+        print(f"True positives: {len(true_positives)}")
+        print(f"False positives: {len(false_positives)}")
+        print(f"Precision: {precision}")
+        print(f"Recall: {recall}")
+        print(f"F3 Score: {f3}")
+
     def tearDown(self):
         try:
             r = urllib.request.urlopen(f"http://localhost:{TEST_PAGER_PORT}/shutdown")
@@ -206,3 +288,4 @@ class SystemIntegrationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

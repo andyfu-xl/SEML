@@ -32,6 +32,7 @@ class TestModel(unittest.TestCase):
 									[0.36041666666278616, 128.1, 76, 0],
 									[1.5743055555576575, 141.38, 76, 0],
 									[0, 208.73, 76, 0]]])
+		
 		self.input_3 = torch.tensor([[[1.7805555555605679, 103.06, 58, 1],
 									[0.18541666666715173, 107.05, 58, 1],
 									[0.0194444444423425, 106.69, 58, 1],
@@ -42,12 +43,22 @@ class TestModel(unittest.TestCase):
 									[0.804861111108039, 103.19, 58, 1],
 									[0, 99.0, 58, 1]]])
 		
+		self.input_4 = torch.tensor([[[ 1.9051e-01, -3.0673e-01,  2.4566e+00,  0.0000e+00],
+									[-3.4692e-01, -5.6721e-01,  2.4566e+00,  0.0000e+00],
+									[-3.1868e-01, -2.2789e-01,  2.4566e+00,  0.0000e+00],
+									[-3.4552e-01,  2.4860e-03,  2.4566e+00,  0.0000e+00],
+									[-3.0353e-01, -1.9371e-01,  2.4566e+00,  0.0000e+00],
+									[-1.4641e-01, -4.1005e-01,  2.4566e+00,  0.0000e+00],
+									[-2.3926e-01, -3.0571e-01,  2.4566e+00,  0.0000e+00],
+									[-3.4106e-01, -6.6935e-01,  2.4566e+00,  0.0000e+00],
+									[-3.4756e-01,  2.7688e+04,  2.4566e+00,  0.0000e+00]]])
+									
 	def test_inference(self):
 		predicted = int(inference(self.model, self.input_1, self.device))
 		self.assertIsInstance(predicted, int)
 		self.assertIn(predicted, [0, 1])
 
-	def test_correct_inference(self):
+	def test_accuracy_inference(self):
 		standardized_input = self.standardize_tensor(self.input_2)
 		# Test if the model can correctly classify the input data
 		predicted = inference(self.model, standardized_input, self.device)
@@ -56,6 +67,9 @@ class TestModel(unittest.TestCase):
 		standardized_input = self.standardize_tensor(self.input_3)
 		predicted = inference(self.model, standardized_input, self.device)
 		self.assertEqual(predicted, 0)
+
+		predicted = inference(self.model, self.input_4, self.device)
+		self.assertEqual(predicted, 1)
 
 	def standardize_tensor(self, input_tensor):
 		mean_tensor = torch.tensor(STANDARDIZE_MEAN, dtype=torch.float32)

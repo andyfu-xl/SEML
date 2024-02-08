@@ -29,7 +29,7 @@ class Preprocessor():
             return
         # delete patient
         elif self.message.message_type == 'ADT^A03':
-            self.database.delete(self.message.mrn)
+            #self.database.delete(self.message.mrn)
             return
         # test result
         elif self.message.message_type == 'ORU^R01':
@@ -41,9 +41,15 @@ class Preprocessor():
             self.database.set(self.message.mrn, self.message.obr_timestamp, self.message.obx_value)
             test_results = patient_data['test_results']
             # only look at the last 9 test results
+            # if there is only one test result, we just skip it.
+            if len(test_results) <= 2:
+                return None
             if len(test_results) > 18:
                 test_results = test_results[-18:]
+            if len(test_results) < 18:
+                test_results = [0] * (18 - len(test_results)) + test_results
             input_tensor = self.to_tensor(gender=gender, dob=dob, test_results=test_results).view(1, -1, 4)
+            input_tensor[input_tensor > 100] = 100
             return input_tensor
     
     # this is a helper function to check if the message is valid

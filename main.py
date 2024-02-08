@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import torch
-import numpy as np
-import time
 
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
@@ -23,10 +21,8 @@ def main():
     preprocessor = Preprocessor(database)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model('./lstm_model.pth').to(device)
-    timings = []
 
     while True:
-        start_time = time.time()
         # Receive message
         message = communicator.receive()
         if message == None:
@@ -53,10 +49,6 @@ def main():
 
         # Acknowledge message
         communicator.acknowledge()
-        end_time = time.time()
-        timings.append(end_time - start_time)
 
-    percentile_90   = np.percentile(timings, 90)
-    print(percentile_90)
 if __name__ == "__main__":
     main()

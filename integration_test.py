@@ -25,7 +25,7 @@ class SystemIntegrationTest(unittest.TestCase):
             "gender": 1,
             "last_test": None,
             "name": "ELIZABETH HOLMES",
-            'paged': False,
+            "paged": False,
             "test_results": []
         }
         self.ORU_R01_db_entry = {
@@ -33,10 +33,11 @@ class SystemIntegrationTest(unittest.TestCase):
             "gender": 1,
             "last_test": '2024-01-20 22:04:03',
             "name": "ELIZABETH HOLMES",
-            'paged': False,
+            "paged": False,
             "test_results": [0, 103.4]
         }
 
+        self.SAVED_MODEL_PATH = "./lstm_model.pth"
         self.current_directory = os.path.dirname(os.path.abspath(__file__))
         relative_path = "data/test_messages.mllp"
         test_mllp_messages_filepath = os.path.join(self.current_directory, relative_path)
@@ -53,7 +54,7 @@ class SystemIntegrationTest(unittest.TestCase):
     def test_integration_receive_all_messages_with_ack(self):
         messages = []
         communicator = Communicator()
-        communicator.connect("localhost", TEST_MLLP_PORT)
+        communicator.connect(f"localhost:{TEST_MLLP_PORT}")
         while True:
             message = communicator.receive()
             if message == None:
@@ -64,13 +65,13 @@ class SystemIntegrationTest(unittest.TestCase):
         self.assertEqual(messages, [ADT_A01, ORU_R01, ADT_A03])
 
     def test_integration_successful_page(self):
-        communicator = Communicator(host="localhost", pager_port=TEST_PAGER_PORT)
+        communicator = Communicator(pager_address=f"localhost:{TEST_PAGER_PORT}")
         r = communicator.page("1234")
         communicator.close()
         self.assertEqual(r.status, http.HTTPStatus.OK)
 
     def test_integration_unsuccessful_page(self):
-        communicator = Communicator(host="localhost", pager_port=TEST_PAGER_PORT)
+        communicator = Communicator(pager_address=f"localhost:{TEST_PAGER_PORT}")
         try:
             communicator.page("NHS1234")
         except urllib.error.HTTPError as e:
@@ -87,12 +88,12 @@ class SystemIntegrationTest(unittest.TestCase):
         preprocessor.preprocess(DataParser().parse_message(to_mllp(ADT_A01)))
         self.assertEqual(db.get("478237423"), self.ADT_A01_db_entry)
 
-    # def test_integration_ADT_A03_delete_patient(self):
-    #     db = Database()
-    #     preprocessor = Preprocessor(db)
-    #     preprocessor.preprocess(DataParser().parse_message(to_mllp(ADT_A01)))
-    #     preprocessor.preprocess(DataParser().parse_message(to_mllp(ADT_A03)))
-    #     self.assertEqual(db.get("478237423"), self.ADT_A01_db_entry)
+    def test_integration_ADT_A03_keep_patient_record(self):
+        db = Database()
+        preprocessor = Preprocessor(db)
+        preprocessor.preprocess(DataParser().parse_message(to_mllp(ADT_A01)))
+        preprocessor.preprocess(DataParser().parse_message(to_mllp(ADT_A03)))
+        self.assertEqual(db.get("478237423"), self.ADT_A01_db_entry)
 
     def test_integration_ORU_R01_add_test_result(self):
         db = Database()
@@ -103,11 +104,11 @@ class SystemIntegrationTest(unittest.TestCase):
 
     # Test integration of whole system
     def test_integration_admission_and_discharge(self):
-        communicator = Communicator("localhost", TEST_MLLP_PORT, TEST_PAGER_PORT)
+        communicator = Communicator(mllp_address=f"localhost:{TEST_MLLP_PORT}", pager_address=f"localhost:{TEST_PAGER_PORT}")
         dataparser = DataParser()
         database = Database()
         preprocessor = Preprocessor(database)
-        model = load_model("./lstm_model.pth")
+        model = load_model(self.SAVED_MODEL_PATH)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         has_aki = False
 
@@ -134,15 +135,15 @@ class SystemIntegrationTest(unittest.TestCase):
 
         self.assertEqual(mrn, "478237423")
         self.assertEqual(preprocessed_message, None)
-        #self.assertEqual(database.get(mrn), None)
+        self.assertEqual(database.get(mrn), self.ORU_R01_db_entry)
         self.assertEqual(has_aki, 0)
 
     def test_integration_admission_without_aki_no_page(self):
-        communicator = Communicator("localhost", TEST_MLLP_PORT, TEST_PAGER_PORT)
+        communicator = Communicator(mllp_address=f"localhost:{TEST_MLLP_PORT}", pager_address=f"localhost:{TEST_PAGER_PORT}")
         dataparser = DataParser()
         database = Database()
         preprocessor = Preprocessor(database)
-        model = load_model("./lstm_model.pth")
+        model = load_model(self.SAVED_MODEL_PATH)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         has_aki = False
         page_response = None
@@ -166,35 +167,38 @@ class SystemIntegrationTest(unittest.TestCase):
         self.assertEqual(has_aki, 0)
         self.assertEqual(page_response, None)
 
-    # TODO: Find ORU R01 message with AKI
-    # def test_integration_admission_with_aki_page(self):
-    #     communicator = Communicator("localhost", TEST_MLLP_PORT, TEST_PAGER_PORT)
-    #     dataparser = DataParser()
-    #     database = Database()
-    #     preprocessor = Preprocessor(database)
-    #     model = load_model("./lstm_model.pth")
-    #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #     has_aki = None
-    #     page_response = None
+    def test_integration_model_f3(self): # python3 -m unittest integration_test.SystemIntegrationTest.test_integration_model_f3
+        communicator = Communicator(mllp_address=f"localhost:{TEST_MLLP_PORT}", pager_address=f"localhost:{TEST_PAGER_PORT}")
+        dataparser = DataParser()
+        database = Database()
+        database.load_csv('./data/history.csv')
+        preprocessor = Preprocessor(database)
+        model = load_model(self.SAVED_MODEL_PATH)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        mrn_aki = []
+        date_aki = []
+        while True:
+            # Receive message
+            message = communicator.receive()
+            if message == None:
+                self.save_inference_results(mrn_aki, date_aki, "mrn_aki.csv")
+                break
 
-    #     for _ in range(2):
-    #         message = communicator.receive()
-    #         if message == None:
-    #             assert False
-    #         parsed_message = dataparser.parse_message(message)
-    #         mrn = parsed_message.mrn
-    #         preprocessed_message = preprocessor.preprocess(parsed_message)
-    #         if preprocessed_message is not None:
-    #             has_aki = inference(model, preprocessed_message, device)
-    #         if has_aki:
-    #             page_response = communicator.page(mrn)
-    #         communicator.acknowledge()
-    #     communicator.close()
+            # Pass the message to data parser
+            parsed_message = dataparser.parse_message(message)
+            mrn = parsed_message.mrn
+            if parsed_message.message_type == 'ORU^R01':
+                date = parsed_message.obr_timestamp
 
-    #     self.assertEqual(mrn, "478237423")
-    #     self.assertEqual(database.get(mrn), self.ORU_R01_db_entry)
-    #     self.assertEqual(has_aki, 1)
-    #     self.assertEqual(page_response.status, http.HTTPStatus.OK)
+            # Process message
+            preprocessed_message = preprocessor.preprocess(parsed_message)
+            if mrn == "701783" and parsed_message.message_type == 'ORU^R01':
+                print(preprocessed_message, date)
+
+        self.assertEqual(mrn, "478237423")
+        self.assertEqual(database.get(mrn), self.ORU_R01_db_entry)
+        self.assertEqual(has_aki, 1)
+        self.assertEqual(page_response.status, http.HTTPStatus.OK)
 
     def test_check_accuracy(self, pred_file_path="mrn_aki.csv", positive_file_path = "data/aki.csv"):
         pred = set()

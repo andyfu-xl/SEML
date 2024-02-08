@@ -23,4 +23,5 @@ COPY modules /app/modules
 RUN chmod +x /app/main.py
 EXPOSE 8440
 EXPOSE 8441
-CMD /app/main.py
+WORKDIR /app/
+CMD ./main.py --mllp=$MLLP_ADDRESS --pager=$PAGER_ADDRESS

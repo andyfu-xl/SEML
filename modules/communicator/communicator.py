@@ -13,17 +13,20 @@ class PagerAPI(Enum):
     SHUTDOWN = "/shutdown"
 
 class Communicator():
-    def __init__(self, host=None, mllp_port=None, pager_port=None):
+    def __init__(self, mllp_address=None, pager_address=None):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.host = host
-        self.pager_port = pager_port
 
-        if host is not None and mllp_port is not None:
-            self.connect(host, mllp_port)
+        if pager_address is not None:
+            self.pager_address = pager_address.replace("https://", "").replace("http://", "")
+
+        if mllp_address is not None:
+            self.mllp_address = mllp_address.replace("https://", "").replace("http://", "")
+            self.connect(mllp_address)
 
     # MLLP server
-    def connect(self, host, port):
-        self.socket.connect((host, port))
+    def connect(self, mllp_address):
+        host, port = mllp_address.split(":")
+        self.socket.connect((host, int(port)))
 
     def receive(self):
         buffer = self.socket.recv(1024)
@@ -56,12 +59,12 @@ class Communicator():
     def page(self, mrn):
         mrn_bytes = bytes(mrn, "ascii")
         r = urllib.request.urlopen(
-            f"http://{self.host}:{self.pager_port}{PagerAPI.PAGE.value}", 
+            f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
             data=mrn_bytes
         )
         return r
 
     def shutdown_sever(self):
         r = urllib.request.urlopen(
-            f"http://{self.host}:{self.pager_port}{PagerAPI.SHUTDOWN.value}"
+            f"http://{self.pager_address}{PagerAPI.SHUTDOWN.value}"
         )

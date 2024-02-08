@@ -1,9 +1,9 @@
 import unittest
-import modules.dataparser.dataparser as dataparser
+import dataparser
 
 class DataparserUnitTest(unittest.TestCase):
     def setUp(self):
-        self.obj = dataparser.Dataparser()
+        self.obj = dataparser.DataParser()
 
     ### For remove_start_and_end function
     def test_remove_start_and_end_start_end_bytes_present(self):

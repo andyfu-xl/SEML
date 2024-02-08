@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
 import os
 import sys
 import csv
 import torch
-_ = [sys.path.insert(1, os.path.join(root, d)) for root, dirs, _ in os.walk(os.getcwd()) for d in dirs]
+# _ = [sys.path.insert(1, os.path.join(root, d)) for root, dirs, _ in os.walk(os.getcwd()) for d in dirs]
 
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
@@ -24,7 +25,7 @@ def main():
         # Receive message
         message = communicator.receive()
         if message == None:
-            save_inference_results(mrn_aki, date_aki, "mrn_aki.csv")
+            save_inference_results(mrn_aki, date_aki, "./data/mrn_aki.csv")
             break
 
         # Pass the message to data parser

@@ -1,7 +1,6 @@
 import csv
 import csv
 from datetime import datetime
-import torch
 
 class Database:
     def __init__(self, file_path=None):

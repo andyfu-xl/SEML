@@ -109,5 +109,6 @@ def inference(model, input_data, device):
 	with torch.no_grad():
 		input_data = input_data.to(device)
 		outputs = model(input_data)
+		#print(torch.sigmoid(outputs))
 		predicted = torch.sigmoid(outputs).round()
 		return int(predicted.cpu().numpy()[0][1])

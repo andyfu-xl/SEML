@@ -1,5 +1,6 @@
 import unittest
-import dataparser
+import dataparser as dataparser
+
 
 class DataparserUnitTest(unittest.TestCase):
     def setUp(self):

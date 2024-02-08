@@ -1,6 +1,6 @@
 import unittest
 import torch
-from model import LSTMModel, inference, load_model
+from model import inference, load_model
 
 
 VALUE_MEAN = 105.94255738333332
@@ -18,7 +18,8 @@ STANDARDIZE_STD = [DATE_STD, VALUE_STD, AGE_STD, 1]
 class TestModel(unittest.TestCase):
 	def setUp(self):
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-		self.model = load_model('../lstm_model.pth')
+		self.model = load_model('./lstm_model.pth')
+		self.model.to(self.device)
 		#LSTMModel(input_dim=4, hidden_dim=64, output_dim=2, num_layers=2)
 		# Load the model's state dictionary
 		#self.model.load_state_dict(torch.load('../lstm_model.pth'))
@@ -54,21 +55,21 @@ class TestModel(unittest.TestCase):
 									[-3.4756e-01,  2.7688e+04,  2.4566e+00,  0.0000e+00]]])
 									
 	def test_inference(self):
-		predicted = int(inference(self.model, self.input_1, self.device))
+		predicted = int(inference(self.model, self.input_1.to(self.device)))
 		self.assertIsInstance(predicted, int)
 		self.assertIn(predicted, [0, 1])
 
 	def test_accuracy_inference(self):
-		standardized_input = self.standardize_tensor(self.input_2)
+		standardized_input = self.standardize_tensor(self.input_2.to(self.device))
 		# Test if the model can correctly classify the input data
-		predicted = inference(self.model, standardized_input, self.device)
+		predicted = inference(self.model, standardized_input)
 		self.assertEqual(predicted, 1)
 
-		standardized_input = self.standardize_tensor(self.input_3)
-		predicted = inference(self.model, standardized_input, self.device)
+		standardized_input = self.standardize_tensor(self.input_3.to(self.device))
+		predicted = inference(self.model, standardized_input)
 		self.assertEqual(predicted, 0)
 
-		predicted = inference(self.model, self.input_4, self.device)
+		predicted = inference(self.model, self.input_4.to(self.device))
 		self.assertEqual(predicted, 1)
 
 	def standardize_tensor(self, input_tensor):

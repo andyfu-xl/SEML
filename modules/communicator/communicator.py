@@ -29,10 +29,13 @@ class Communicator():
         self.socket.connect((host, int(port)))
 
     def receive(self):
-        buffer = self.socket.recv(1024)
-        if len(buffer) == 0:
-            return None
-        return buffer
+        message = b""
+        while MLLPDelimiter.END_OF_BLOCK.value not in message:
+            buffer = self.socket.recv(1024)
+            if len(buffer) == 0:
+                return None
+            message += buffer
+        return message
     
     def acknowledge(self):
         current_time = time.strftime("%Y%m%d%H%M%S")
@@ -52,9 +55,6 @@ class Communicator():
         m += bytes(chr(MLLPDelimiter.END_OF_BLOCK.value) + chr(MLLPDelimiter.CARRIAGE_RETURN.value), "ascii")
         return m
     
-    def from_mllp(self, buffer):
-        return str(buffer[1:-3], "ascii").split("\r")
-
     # Pager server
     def page(self, mrn):
         mrn_bytes = bytes(mrn, "ascii")

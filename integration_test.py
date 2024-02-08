@@ -1,20 +1,17 @@
+#!/usr/bin/env python3
 import os
-import sys
-import csv
-import time
 import http
 import torch
 import unittest
 import subprocess
 import urllib.error
 import urllib.request
-[sys.path.insert(1, os.path.join(root, d)) for root, dirs, _ in os.walk(os.getcwd()) for d in dirs]
 
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
 from modules.preprocessor import Preprocessor
 from modules.database import Database
-from modules.model import inference, load_model, save_inference_results
+from modules.model import inference, load_model
 from simulator_test import ADT_A01, ADT_A03, ORU_R01, TEST_MLLP_PORT, TEST_PAGER_PORT, wait_until_healthy, from_mllp, to_mllp
 
 class SystemIntegrationTest(unittest.TestCase):
@@ -59,7 +56,7 @@ class SystemIntegrationTest(unittest.TestCase):
             message = communicator.receive()
             if message == None:
                 break
-            messages.append(communicator.from_mllp(message))
+            messages.append(from_mllp(message))
             communicator.acknowledge()
         communicator.close()
         self.assertEqual(messages, [ADT_A01, ORU_R01, ADT_A03])
@@ -166,37 +163,6 @@ class SystemIntegrationTest(unittest.TestCase):
         self.assertEqual(database.get(mrn), self.ORU_R01_db_entry)
         self.assertEqual(has_aki, 0)
         self.assertEqual(page_response, None)
-
-
-    def test_check_accuracy(self, pred_file_path="mrn_aki.csv", positive_file_path = "data/aki.csv"):
-        pred = set()
-        with open(pred_file_path, "r") as f:
-            for line in f:
-                pred.add(line.strip())#.split(",")[0])
-        positive = set()
-        with open(positive_file_path, "r") as f:
-            for line in f:
-                positive.add(line.strip())#.split(",")[0])
-        
-        true_positives = []
-        false_positives = []
-
-        for p in pred:
-            if p in positive:
-                true_positives.append(p)
-                #positive.remove(p)
-            else:
-                false_positives.append(p)
-        beta = 3
-        #print(positive)
-        precision = len(true_positives) / (len(true_positives) + len(false_positives))
-        recall = len(true_positives) / len(positive)
-        f3 = ((1 + beta**2) * (precision * recall)) / ((beta**2 * precision) + recall)
-        print(f"True positives: {len(true_positives)}")
-        print(f"False positives: {len(false_positives)}")
-        print(f"Precision: {precision}")
-        print(f"Recall: {recall}")
-        print(f"F3 Score: {f3}")
 
     def tearDown(self):
         try:

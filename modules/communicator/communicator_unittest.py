@@ -18,9 +18,5 @@ class CommunicatorTest(unittest.TestCase):
         mllp = self.communicator.to_mllp(self.ACK_segments)
         self.assertEqual(mllp, self.ACK_mllp)
 
-    def test_from_mllp(self):
-        segments = self.communicator.from_mllp(self.ACK_mllp)
-        self.assertEqual(segments, self.ACK_segments)
-
 if __name__ == "__main__":
     unittest.main()

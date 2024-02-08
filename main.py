@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import torch
-# _ = [sys.path.insert(1, os.path.join(root, d)) for root, dirs, _ in os.walk(os.getcwd()) for d in dirs]
 
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
@@ -27,6 +26,7 @@ def main():
         # Receive message
         message = communicator.receive()
         if message == None:
+            communicator.close()
             break
 
         # Pass the message to data parser

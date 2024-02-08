@@ -23,6 +23,7 @@ class TestDatabase(unittest.TestCase):
             self.assertIsNotNone(patient["test_results"])
             # the last test should always be string in '%Y-%m-%d %H:%M:%S' format
             self.assertIsInstance(patient["last_test"], str)
+            self.assertFalse(patient["paged"])
             try:
                 datetime.strptime(patient["last_test"], '%Y-%m-%d %H:%M:%S')
             except ValueError:
@@ -122,6 +123,10 @@ class TestDatabase(unittest.TestCase):
         self.assertIsNotNone(self.db.get('2'))
         self.db.delete('2')
         self.assertIsNone(self.db.get('2'))
+    
+    def test_paging(self):
+        self.db.paged('1')
+        self.assertTrue(self.db.get('1')['paged'])
     
 
 if __name__ == '__main__':

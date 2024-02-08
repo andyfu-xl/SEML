@@ -10,6 +10,9 @@ from modules.database import Database
 from modules.preprocessor import Preprocessor
 from modules.model import load_model, inference
 
+import resource
+import sys
+
 def main():
     communicator = Communicator("localhost", 8440, 8441)
     dataparser = DataParser()
@@ -52,5 +55,13 @@ def main():
     print(f"Fastest iteration: {min(iteration_timings)}")
     print(f'Average iteration: {sum(iteration_timings) / len(iteration_timings)}')
     print(f"Slowest iteration: {max(iteration_timings)}")
+
+
 if __name__ == "__main__":
+    # Limit memory usage to 2GB
+    max_memory_bytes = 2 * 1024 * 1024 * 1024  # 2GB in bytes
+    resource.setrlimit(resource.RLIMIT_AS, (max_memory_bytes, max_memory_bytes))
+    # Set resource limits
+    # Limit CPU usage to 50% of a dual-core CPU
+    resource.setrlimit(resource.RLIMIT_CPU, (5, 5))
     main()

@@ -4,12 +4,25 @@ from datetime import datetime
 
 class Database:
     def __init__(self, file_path=None):
+        '''
+        Main class for reading and storing the data, the data is stored in cache
+        Attributes:
+            data (dict): A dictionary of the data, with MRN as the key
+                        Each patient's data is stored as a dictionary with the following
+                        keys: test_results, gender, dob, name, last_test, paged
+                        Where paged is a flag for avoiding paging the same patient multiple times
+        '''
         self.data = {}
         if file_path is not None:
             self.load_csv(file_path)
     
-    # this function loads the data from a csv file, and stores it in a dictionary
+
     def load_csv(self, file_path):
+        '''
+        Load data from a csv file and store it in the data attribute
+        Args:
+            file_path (str): The path to the csv file
+        '''
         with open(file_path, newline='') as csvfile:
             reader = csv.reader(csvfile)
             self.data = {}
@@ -24,10 +37,19 @@ class Database:
                 else:
                     raise Exception('Duplicate MRN found:', mrn)        
 
-    # this function processes the dates in the csv file, and returns the time difference between the dates
-    # the date of the last test is used to update new test results
-    # the entire process maintains all the information about each patient, while converted to format that is easy to use
+
     def process_dates(self, test_results):
+        '''
+        Process the dates in the test results and return the time difference between the dates
+        this function processes the dates in the csv file, and returns the time difference between the dates
+        the date of the last test is used to update new test results
+        the entire process maintains all the information about each patient, while converted to format that is easy to use
+        Args:
+            test_results (list): A list of test results
+        Returns:
+            test_results (list): A list of test results with the time difference between the dates
+            last_test (str): The date of the last test
+        '''
         if len(test_results) < 2 or len(test_results) % 2 != 0:
             raise Exception('Invalid test results length:', test_results)
         curr_date = test_results[0]
@@ -50,15 +72,29 @@ class Database:
         test_results[-2] = 0
         return test_results, last_test
         
-    # This function returns the patient's data from the database
+
     def get(self, mrn):
+        '''
+        Get the patient's data from the database
+        Args:
+            mrn (str): The medical record number of the patient
+        Returns:
+            dict: The patient's data    
+        '''
         if mrn in self.data:
             return self.data[mrn]
 
-    # This function adds a new test result to the patient's data
-    # We do not accept new test results for patients who are not registered or have no historial test results
-    # We also do not accept test results that are not in order
+
     def set(self, mrn, date, value):
+        '''
+        Add a new test result to the patient's data
+        We do not accept new test results for patients who are not registered or have no historial test results
+        We also do not accept test results that are not in order
+        Args:
+            mrn (str): The medical record number of the patient
+            date (str): The date of the test
+            value (float): The value of the test
+        '''
         if mrn not in self.data:
             raise Exception('Error: Trying to set test results for a non-existing patient, MRN not found:', mrn)
         if len(self.data[mrn]["test_results"]) == 0:
@@ -77,17 +113,28 @@ class Database:
             raise Exception('Error: Test date is not in order:', date, self.data[mrn]["last_test"])
         # print("Test result added successfully")
             
-    # This function deletes the patient's data from the database
+    # This function should never be called in CW3, but it is implemented for completeness and future use
     def delete(self, mrn):
+        '''
+        Delete the patient's data from the database
+        Args:
+            mrn (str): The medical record number of the patient
+        '''
         if mrn in self.data.keys():
             del self.data[mrn]
         else:
             raise Exception('Error: Trying to discharging test results for a non-existing patient, MRN not found:', mrn)
         # print("Patient discharged successfully")
         
-    # This function registers patients.
-    # We accept patients who has no test results, or has test results in order
+
     def register(self, mrn, gender, dob, name):
+        '''
+        Register a new patient in the database
+        This function registers patients.
+        We accept patients who has no test results, or has test results in order
+        Args:
+            mrn (str): The medical record number of the patient
+        '''
         if gender not in [0, 1]:
             raise Exception('Error: expected binary gender (0 for male or 1 for female) but found:', gender)
         dob_datetime = datetime.strptime(dob, '%Y-%m-%d')
@@ -102,8 +149,13 @@ class Database:
             self.data[mrn]["name"] = name
         # print("Patient registered successfully")
             
-    # This function pages the patient, we only have to page a patient once.
+    
     def paged(self, mrn):
+        '''
+        This function pages the patient, we only have to page a patient once.
+        Args:
+            mrn (str): The medical record number of the patient
+        '''
         if mrn in self.data:
             self.data[mrn]["paged"] = True
         else:

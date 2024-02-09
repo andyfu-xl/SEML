@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import torch
+import asyncio
+import aiosqlite
 
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
@@ -8,7 +10,7 @@ from modules.database import Database
 from modules.preprocessor import Preprocessor
 from modules.model import load_model, inference
 
-def main():
+async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mllp', type=str, help="Port on which to receive HL7 messages via MLLP")
     parser.add_argument('--pager', type=str, help="Port on which to page requests via HTTP")
@@ -31,7 +33,7 @@ def main():
 
         # Pass the message to data parser
         parsed_message = dataparser.parse_message(message)
-        
+        await store_message_async(database, message)  
         mrn = parsed_message.mrn
 
         # Process message
@@ -50,5 +52,10 @@ def main():
         # Acknowledge message
         communicator.acknowledge()
 
+async def store_message_async(db, msg):
+    loop = asyncio.get_running_loop()
+    # Run the database's set method in a thread pool executor to avoid blocking the event loop
+    await loop.run_in_executor(None, db.save_csv, msg)
+
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

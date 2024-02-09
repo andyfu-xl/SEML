@@ -1,5 +1,4 @@
 import csv
-import csv
 from datetime import datetime
 
 class Database:
@@ -77,6 +76,13 @@ class Database:
             raise Exception('Error: Test date is not in order:', date, self.data[mrn]["last_test"])
         # print("Test result added successfully")
             
+
+    def save_csv(self, msg):
+        print("saving: " + str(msg))
+        with open('new_history.csv', 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(msg)
+
     # This function deletes the patient's data from the database
     def delete(self, mrn):
         if mrn in self.data.keys():

@@ -78,10 +78,10 @@ class Database:
             
 
     def save_csv(self, msg):
-        print("saving: " + str(msg))
+        print("saving: " + str(msg.decode('utf-8')))
         with open('new_history.csv', 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(msg)
+            writer.writerow(msg.decode('utf-8'))
 
     # This function deletes the patient's data from the database
     def delete(self, mrn):

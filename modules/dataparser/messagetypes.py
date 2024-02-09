@@ -1,23 +1,48 @@
 from datetime import datetime
 
 class MLLPMessage:
+    '''
+    Base class for MLLP message types
+    '''
     def __init__(self):
         self.msg_timestamp = None
         self.mrn = None
 
 
 class Adt_a01(MLLPMessage):
+    '''
+    Class for ADT^A01 message type
+
+    Attributes:
+        message_type: str [Message type]
+        name: str [Patient name]
+        dob: str [Date of birth
+        msg_timestamp: str [Timestamp of the message]
+        mrn: int [Medical record number]
+    '''
     def __init__(self):
+        '''
+        Constructor for ADT^A01 message type
+
+        Attributes:
+            message_type: str [Message type]
+            name: str [Patient name]
+            dob: str [Date of birth]
+            gender: int [0 for Male, 1 for Female]
+        '''
         super().__init__()
         self.message_type = 'ADT^A01'
         self.name = None
         self.dob = None
         self.gender = None
-        # self.nok = None
-        # self.nok_name = None
-        # self.nok_rs = None
 
     def process_message(self, message_segments: list[str]):
+        '''
+        Processes the message and sets the attributes of the appropriate class
+
+        Arguments:
+            message_segments: list[str] [The list of segments of the message]
+        '''
         msh = message_segments[0].split('|')
         pid = message_segments[1].split('|')
         self.msg_timestamp = msh[6]
@@ -42,11 +67,31 @@ class Adt_a01(MLLPMessage):
 
 
 class Adt_a03(MLLPMessage):
+    '''
+    Class for ADT^A03 message type
+
+    Attributes:
+        message_type: str [Message type]
+        msg_timestamp: str [Timestamp of the message]
+        mrn: int [Medical record number]
+    '''
     def __init__(self):
+        '''
+        Constructor for ADT^A03 message type
+
+        Attributes:
+            message_type: str [Message type]
+        '''
         super().__init__()
         self.message_type = 'ADT^A03'
 
     def process_message(self, message_segments: list[str]):
+        '''
+        Processes the message and sets the attributes of the appropriate class
+        
+        Arguments:
+            message_segments: list[str] [The list of segments of the message]
+        '''
         msh = message_segments[0].split('|')
         pid = message_segments[1].split('|')
         self.msg_timestamp = msh[6]
@@ -56,7 +101,27 @@ class Adt_a03(MLLPMessage):
         return self
 
 class Oru_r01(MLLPMessage):
+    '''
+    Class for ORU^R01 message type
+
+    Attributes:
+        message_type: str [Message type]
+        obr_timestamp: str [Timestamp of the observation]
+        obx_type: str [Type of observation]
+        obx_value: float [Value of the observation]
+        msg_timestamp: str [Timestamp of the message]
+        mrn: int [Medical record number]
+    '''
     def __init__(self):
+        '''
+        Constructor for ORU^R01 message type
+
+        Attributes:
+            message_type: str [Message type]
+            obr_timestamp: str [Timestamp of the observation]
+            obx_type: str [Type of observation]
+            obx_value: float [Value of the observation]
+        '''
         super().__init__()
         self.message_type = 'ORU^R01'
         self.obr_timestamp = None
@@ -64,6 +129,12 @@ class Oru_r01(MLLPMessage):
         self.obx_value = None
 
     def process_message(self, message_segments: list[str]):
+        '''
+        Processes the message and sets the attributes of the appropriate class
+
+        Arguments:
+            message_segments: list[str] [The list of segments of the message]
+        '''
         msh = message_segments[0].split('|')
         pid = message_segments[1].split('|')
         obr = message_segments[2].split('|')

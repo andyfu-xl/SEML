@@ -3,12 +3,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install python3
 COPY requirements.txt /app/
 RUN pip3 install -r /app/requirements.txt
 
-# Copy Simulator
-# COPY simulator.py /app/
-# COPY simulator_test.py /app/
-# WORKDIR /simulator
-# RUN ./simulator_test.py
-
 # Copy Model
 COPY lstm_model.pth /app/
 COPY main.py /app/

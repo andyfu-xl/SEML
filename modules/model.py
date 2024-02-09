@@ -34,6 +34,7 @@ class LSTMModel(nn.Module):
 def load_model(model_path):
 	'''
 	Load the model from the given path
+		model_path: str
 	'''
 	model = LSTMModel(input_dim=4, hidden_dim=64, output_dim=2, num_layers=2)
 	model.load_state_dict(torch.load(model_path))
@@ -42,8 +43,9 @@ def load_model(model_path):
 def inference(model, input_data):
 	'''
 	Inference the model with the given input data
-
-	return: the predicted label (0 or 1)
+		model: model object
+		input_data: tensor in shape (batch_size, seq_len, input_dim)
+		return: Integer, the predicted label (0 or 1)
 	'''
 	model.eval()
 	with torch.no_grad():

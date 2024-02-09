@@ -1,4 +1,3 @@
-import csv
 import torch
 import torch.nn as nn
 	
@@ -33,21 +32,21 @@ class LSTMModel(nn.Module):
 ####################	
 
 def load_model(model_path):
+	'''
+	Load the model from the given path
+	'''
 	model = LSTMModel(input_dim=4, hidden_dim=64, output_dim=2, num_layers=2)
 	model.load_state_dict(torch.load(model_path))
 	return model
 
 def inference(model, input_data):
+	'''
+	Inference the model with the given input data
+
+	return: the predicted label (0 or 1)
+	'''
 	model.eval()
 	with torch.no_grad():
 		outputs = model(input_data)
 		predicted = torch.sigmoid(outputs).round()
 		return int(predicted.cpu().tolist()[0][1])
-	
-def save_inference_results(pred_labels, dates, output_path):
-    print("Saving the inference results...")
-    w = csv.writer(open(output_path, "w"))
-    w.writerow(("mrn","date"))
-    for i in range(len(pred_labels)):	
-        w.writerow([pred_labels[i], dates[i]])
-    print("The inference results have been saved to", output_path)

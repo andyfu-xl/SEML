@@ -1,6 +1,7 @@
 import socket
 import time
 import urllib.request
+import requests
 from enum import Enum
 
 class MLLPDelimiter(Enum):
@@ -57,10 +58,9 @@ class Communicator():
     
     # Pager server
     def page(self, mrn):
-        mrn_bytes = bytes(mrn, "ascii")
-        r = urllib.request.urlopen(
-            f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
-            data=mrn_bytes
+        r = requests.post(
+            f"http://{self.pager_address}{PagerAPI.PAGE.value}",
+            data=mrn
         )
         return r
 

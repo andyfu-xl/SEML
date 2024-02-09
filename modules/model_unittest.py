@@ -1,29 +1,20 @@
 import unittest
 import torch
 from model import inference, load_model
-
-
-VALUE_MEAN = 105.94255738333332
-VALUE_STD= 39.19610255401994
-AGE_MEAN = 37.040219
-AGE_STD = 21.681311572666875
-# the average interval between two tests in days
-DATE_MEAN = 19.595264259014705
-# the standard deviation of the interval between two tests in days
-DATE_STD = 56.37914791297929
-
-STANDARDIZE_MEAN = [DATE_MEAN, VALUE_MEAN, AGE_MEAN, 0]
-STANDARDIZE_STD = [DATE_STD, VALUE_STD, AGE_STD, 1]
+from preprocessor import Preprocessor
+from database import Database
 
 class TestModel(unittest.TestCase):
 	def setUp(self):
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 		self.model = load_model('./lstm_model.pth')
 		self.model.to(self.device)
-		#LSTMModel(input_dim=4, hidden_dim=64, output_dim=2, num_layers=2)
-		# Load the model's state dictionary
-		#self.model.load_state_dict(torch.load('../lstm_model.pth'))
+		self.database = Database()
+		self.preprocessor = Preprocessor(self.database)
+
+		# Random input data
 		self.input_1 = torch.normal(0, 1, (1, 9, 4))
+		# Positive sample form training set (unpreprocessed)
 		self.input_2 = torch.tensor([[[0.0, 0.0, 76, 0],
 							   		[0.0, 0.0, 76, 0],
 									[1.9479166666715173, 96.98, 76, 0],
@@ -34,6 +25,7 @@ class TestModel(unittest.TestCase):
 									[1.5743055555576575, 141.38, 76, 0],
 									[0, 208.73, 76, 0]]])
 		
+		# Negative sample form training set (unpreprocessed)
 		self.input_3 = torch.tensor([[[1.7805555555605679, 103.06, 58, 1],
 									[0.18541666666715173, 107.05, 58, 1],
 									[0.0194444444423425, 106.69, 58, 1],
@@ -43,7 +35,7 @@ class TestModel(unittest.TestCase):
 									[1.0118055555576575, 115.99, 58, 1],
 									[0.804861111108039, 103.19, 58, 1],
 									[0, 99.0, 58, 1]]])
-		
+		# Positive sample form training set (preprocessed)
 		self.input_4 = torch.tensor([[[ 1.9051e-01, -3.0673e-01,  2.4566e+00,  0.0000e+00],
 									[-3.4692e-01, -5.6721e-01,  2.4566e+00,  0.0000e+00],
 									[-3.1868e-01, -2.2789e-01,  2.4566e+00,  0.0000e+00],
@@ -55,29 +47,30 @@ class TestModel(unittest.TestCase):
 									[-3.4756e-01,  2.7688e+04,  2.4566e+00,  0.0000e+00]]])
 									
 	def test_inference(self):
+		'''
+		Test if the model can inference the input data with expected shape, 
+		and give the expected output 0 or 1.
+		'''
 		predicted = int(inference(self.model, self.input_1.to(self.device)))
 		self.assertIsInstance(predicted, int)
 		self.assertIn(predicted, [0, 1])
 
 	def test_accuracy_inference(self):
-		standardized_input = self.standardize_tensor(self.input_2.to(self.device))
+		'''
+		Test if the model can correctly classify the positive sample, negative sample, 
+		and the preprocessed input sample
+		'''
+		standardized_input = self.preprocessor.standardize_tensor(self.input_2.to(self.device))
 		# Test if the model can correctly classify the input data
 		predicted = inference(self.model, standardized_input)
 		self.assertEqual(predicted, 1)
 
-		standardized_input = self.standardize_tensor(self.input_3.to(self.device))
+		standardized_input = self.preprocessor.standardize_tensor(self.input_3.to(self.device))
 		predicted = inference(self.model, standardized_input)
 		self.assertEqual(predicted, 0)
 
 		predicted = inference(self.model, self.input_4.to(self.device))
 		self.assertEqual(predicted, 1)
-
-	def standardize_tensor(self, input_tensor):
-		mean_tensor = torch.tensor(STANDARDIZE_MEAN, dtype=torch.float32)
-		std_tensor = torch.tensor(STANDARDIZE_STD, dtype=torch.float32)
-		input_tensor = (input_tensor - mean_tensor) / std_tensor
-		return input_tensor
-	
 
 if __name__ == '__main__':
     unittest.main()

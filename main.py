@@ -10,17 +10,19 @@ from modules.model import load_model, inference
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mllp', type=str, help="Port on which to receive HL7 messages via MLLP")
-    parser.add_argument('--pager', type=str, help="Port on which to page requests via HTTP")
+    parser.add_argument('--mllp', type=str, help="Address to receive HL7 messages via MLLP")
+    parser.add_argument('--pager', type=str, help="Address to page requests via HTTP")
+    parser.add_argument('--history', type=str, help="Path to the history CSV file", default="./data/history.csv")
+    parser.add_argument('--model', type=str, help="Path to the model file", default="./lstm_model.pth")
     flags = parser.parse_args()
 
     communicator = Communicator(flags.mllp, flags.pager)
     dataparser = DataParser()
     database = Database()
-    database.load_csv('./data/history.csv')
+    database.load_csv(flags.history)
     preprocessor = Preprocessor(database)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = load_model('./lstm_model.pth').to(device)
+    model = load_model(flags.model).to(device)
 
     while True:
         # Receive message
@@ -40,7 +42,7 @@ def main():
         # Perform inference
         has_aki = False
         if preprocessed_message is not None:
-            has_aki = int(inference(model, preprocessed_message.to(device)))
+            has_aki = inference(model, preprocessed_message.to(device))
         
         # Page (if necessary)
         if has_aki:

@@ -13,7 +13,13 @@ class PagerAPI(Enum):
     SHUTDOWN = "/shutdown"
 
 class Communicator():
+    '''Communicator class for sending and receiving messages from MLLP and Pager servers.
+    Attributes:
+        - mllp_address (str): The address of the MLLP server.
+        - pager_address (str): The address of the Pager server.
+    '''
     def __init__(self, mllp_address=None, pager_address=None):
+        '''Constructor for the Communicator class.'''
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         if pager_address is not None:
@@ -25,10 +31,19 @@ class Communicator():
 
     # MLLP server
     def connect(self, mllp_address):
+        '''Connects to the MLLP server.'''
         host, port = mllp_address.split(":")
         self.socket.connect((host, int(port)))
 
     def receive(self):
+        '''Receives a message from the MLLP server.
+
+        In the case where the message is sent partially, the function will wait and 
+        continue to receive the message until the end of the message is reached.
+
+        Returns:
+            - message (bytes): The message received from the MLLP server.
+        '''
         message = b""
         while MLLPDelimiter.END_OF_BLOCK.value not in message:
             buffer = self.socket.recv(1024)
@@ -38,6 +53,7 @@ class Communicator():
         return message
     
     def acknowledge(self):
+        '''Sends an acknowledgment message to the MLLP server with the current time.'''
         current_time = time.strftime("%Y%m%d%H%M%S")
         ACK = [
             f"MSH|^~\&|||||{current_time}||ACK|||2.5",
@@ -46,10 +62,12 @@ class Communicator():
         self.socket.sendall(self.to_mllp(ACK))
 
     def close(self):
+        '''Closes the connection to the MLLP server.'''
         self.socket.close()
 
     # Packing and unpacking MLLP messages
     def to_mllp(self, segments):
+        '''Packs the segments into an MLLP message.'''
         m = bytes(chr(MLLPDelimiter.START_OF_BLOCK.value), "ascii")
         m += bytes("\r".join(segments) + "\r", "ascii")
         m += bytes(chr(MLLPDelimiter.END_OF_BLOCK.value) + chr(MLLPDelimiter.CARRIAGE_RETURN.value), "ascii")
@@ -57,6 +75,11 @@ class Communicator():
     
     # Pager server
     def page(self, mrn):
+        '''Sends a page request to the Pager server.
+
+        Args:
+            - mrn (str): The medical record number of the patient to page.
+        '''
         mrn_bytes = bytes(mrn, "ascii")
         r = urllib.request.urlopen(
             f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
@@ -64,7 +87,8 @@ class Communicator():
         )
         return r
 
-    def shutdown_sever(self):
+    def shutdown_server(self):
+        '''Sends a shutdown request to the Pager server.'''
         r = urllib.request.urlopen(
             f"http://{self.pager_address}{PagerAPI.SHUTDOWN.value}"
         )

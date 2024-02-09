@@ -48,7 +48,7 @@ class DataParser():
         segments = [x for x in segments if x]
         return segments
 
-    def get_message_type(self, message_segment: list(str)):
+    def get_message_type(self, message_segment: list[str]):
         '''
         Returns the message type of the message by parsing the MSH segment
         which by HL7 messages is the first segment of the message

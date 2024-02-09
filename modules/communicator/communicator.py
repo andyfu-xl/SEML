@@ -1,7 +1,6 @@
 import socket
 import time
 import urllib.request
-import requests
 from enum import Enum
 
 class MLLPDelimiter(Enum):

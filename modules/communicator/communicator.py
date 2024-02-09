@@ -58,9 +58,10 @@ class Communicator():
     
     # Pager server
     def page(self, mrn):
-        r = requests.post(
-            f"http://{self.pager_address}{PagerAPI.PAGE.value}",
-            data=mrn
+        mrn_bytes = bytes(mrn, "ascii")
+        r = urllib.request.urlopen(
+            f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
+            data=mrn_bytes
         )
         return r
 

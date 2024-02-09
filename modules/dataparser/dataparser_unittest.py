@@ -12,21 +12,6 @@ class DataparserUnitTest(unittest.TestCase):
         result = self.obj.remove_start_and_end(message)
         self.assertEqual(result, expected_result)
 
-    # def test_remove_start_and_end_only_end_byte_present(self):
-    #     message = b'Hello\x1c'
-    #     with self.assertRaises(ValueError):
-    #         self.obj.remove_start_and_end(message)
-
-    # def test_remove_start_and_end_only_start_byte_present(self):
-    #     message = b'\x0bHello'
-    #     with self.assertRaises(ValueError):
-    #         self.obj.remove_start_and_end(message)
-
-    # def test_remove_start_and_end_no_start_or_end_bytes_present(self):
-    #     message = b'Hello'
-    #     with self.assertRaises(ValueError):
-    #         self.obj.remove_start_and_end(message)
-
     def test_remove_start_and_end_multiple_start_and_end_bytes(self):
         message = b'\x0b\x0bHello\x1c\x1c'
         expected_result = b'\x0bHello\x1c'
@@ -47,21 +32,18 @@ class DataparserUnitTest(unittest.TestCase):
 
     ### For segment_message function
     def test_segment_message_empty(self):
-        #write units tests for the segment_message method
         message = ''
         expected_segments = []
         result = self.obj.segment_message(message)
         self.assertEqual(result, expected_segments)
 
     def test_segment_message_single_segment(self):
-        #write units tests for the segment_message method
         message = 'MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5'
         expected_segments = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5']
         result = self.obj.segment_message(message)
         self.assertEqual(result, expected_segments)
 
     def test_segment_message_ADT_A01(self):
-        #write units tests for the segment_message method
         message = 'MSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5\rPID|1||497030||ROSCOE DOHERTY||19870515|M\r\r'
         expected_segments = ['MSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5', 
                              'PID|1||497030||ROSCOE DOHERTY||19870515|M']
@@ -69,7 +51,6 @@ class DataparserUnitTest(unittest.TestCase):
         self.assertEqual(result, expected_segments)
 
     def test_segment_message_ADT_A03(self):
-        #write units tests for the segment_message method
         message = 'MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5\rPID|1||829339\r\r'
         expected_segments = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5', 
                              'PID|1||829339']
@@ -77,7 +58,6 @@ class DataparserUnitTest(unittest.TestCase):
         self.assertEqual(result, expected_segments)
 
     def test_segment_message_ORU(self):
-        #write units tests for the segment_message method
         message = 'MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331113300||ORU^R01|||2.5\rPID|1||257406\rOBR|1||||||20240331113300\rOBX|1|SN|CREATININE||92.95579346699137\r\r'
         expected_segments = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331113300||ORU^R01|||2.5',
                              'PID|1||257406',
@@ -87,7 +67,6 @@ class DataparserUnitTest(unittest.TestCase):
         self.assertEqual(result, expected_segments)
 
     def test_segment_message_with_new_separator(self):
-        #write units tests for the segment_message method
         message = 'MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5\nPID|1||829339\n\n'
         expected_segments = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5',
                              'PID|1||829339']

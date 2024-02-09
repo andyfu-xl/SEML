@@ -1,22 +1,61 @@
 from . import messagetypes
 
 class DataParser():
+    '''
+    Main class for parsing HL7 messages
+    Message types that are supported: ORU^R01, ADT^A01, ADT^A03
+    Attributes:
+        ORU: str
+        A01: str
+        A03: str
+    '''
     def __init__(self):
+        '''
+        Constructor for DataParser with supported message types
+            self.ORU: str
+            self.A01: str
+            self.A03: str
+        '''
         self.ORU = 'ORU^R01'
         self.A01 = 'ADT^A01'
         self.A03 = 'ADT^A03'
 
     def remove_start_and_end(self, message: bytes, start=b'\x0b', end=b'\x1c'):
+        '''
+        Removes the start and end characters from the message
+        Default start character is '\x0b'
+        Default end character is '\x1c'
+        
+        Arguments:
+            message: bytes [The message to be processed]
+            start: bytes [The start character of the message]
+            end: bytes [The end character of the message]
+        '''
         message = message.replace(start, b'', 1)
         message = message.replace(end, b'', 1)
         return message
     
     def segment_message(self, message: bytes, segment='\r'):
+        '''
+        Splits the message into segments.
+        Default split character is '\r'
+        
+        Arguments:
+            message: bytes [The message to be processed]
+            segment: str [The character to split the message by]
+        '''
         segments = message.split(segment)
         segments = [x for x in segments if x]
         return segments
 
-    def get_message_type(self, message_segment: list):
+    def get_message_type(self, message_segment: list(str)):
+        '''
+        Returns the message type of the message by parsing the MSH segment
+        which by HL7 messages is the first segment of the message
+        
+        Argument:
+            message_segment: list(str) [The list of segments of the message]
+        '''
         msh_segment = message_segment[0]
         msg_type = msh_segment.split('|')[8]
         if msg_type == self.ORU:
@@ -29,6 +68,13 @@ class DataParser():
             raise ValueError('Invalid message type:', msg_type)
 
     def parse_message(self, message: bytes):
+        '''
+        Parses the message and returns the message object of the appropriate type
+        Message type: ORU^R01, ADT^A01, ADT^A03
+        
+        Argument:
+            message: bytes [The message to be processed]
+        '''
         message = self.remove_start_and_end(message)
         message = message.decode('utf-8')
         message_segments = self.segment_message(message)

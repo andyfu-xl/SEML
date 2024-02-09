@@ -5,16 +5,16 @@ import os
 
 class TestDatabase(unittest.TestCase):
     def setUp(self):
-        with open('../data/history_test.csv', 'w') as f:
+        with open('./data/history_test.csv', 'w') as f:
             f.write('mrn,date1,result1,date2,result2,date3,result3\n')
             f.write('1,2020-01-01 00:00:00,1,2020-01-02 00:00:00,2,2020-01-03 00:00:00,3\n')
             f.write('2,2020-01-01 00:00:00,1,2020-01-02 00:00:00,2,2020-01-03 00:00:00,3\n')
-        self.db = Database('../data/history_test.csv')
+        self.db = Database('./data/history_test.csv')
         # delete the test file
-        os.remove('../data/history_test.csv')
+        os.remove('./data/history_test.csv')
 
     def test_load_csv(self):
-        db = Database("../data/history.csv")
+        db = Database("./data/history.csv")
         # all gender, dob and name should be None
         for _, patient in db.data.items():
             self.assertIsNone(patient["gender"])

@@ -20,9 +20,20 @@ class Preprocessor():
         self.database = database
 
     def preprocess(self, message):
+        '''
+        Preprocess all three types of messages:
+        for ADT^A01, register the patient, and return None
+        for ADT^A03, the function do nothing for CW3, return None
+        for ORU^R01, add the test result to the patient's data, and return the input tensor for the model
+        Args:
+            message (Message): The message to be preprocessed
+        Returns:
+            input_tensor (Tensor): The input tensor for the model
+                                    3D tensor with shape (1, 9, 4), 1 is the fixed batch size for cw3
+                                    9 is the fixed number of test results for each patient, 4 is the number of features
+        '''
         self.message = message
         self.check_message()
-        # switch case for message type
         # register patient
         if self.message.message_type == 'ADT^A01':
             self.database.register(self.message.mrn, self.message.gender, self.message.dob, self.message.name)
@@ -44,7 +55,7 @@ class Preprocessor():
             self.database.set(self.message.mrn, self.message.obr_timestamp, self.message.obx_value)
             test_results = patient_data['test_results']
             # only look at the last 9 test results
-            # if there is only one test result, we just skip it.
+            # if there is only one test result, we just skip it
             if len(test_results) <= 2:
                 return None
             if len(test_results) > 18:
@@ -55,8 +66,11 @@ class Preprocessor():
             input_tensor[input_tensor > 100] = 100
             return input_tensor
     
-    # this is a helper function to check if the message is valid
+
     def check_message(self):
+        '''
+        Check if the message is valid
+        '''
         if self.message.mrn is None:
             raise Exception('Error: MRN not found in the message')
         if self.message.message_type == 'ADT^A01':
@@ -79,11 +93,20 @@ class Preprocessor():
         else:
             raise Exception('Error: Invalid message type:', self.message.message_type)
 
-    # combine the patient's info and test results into a tensor, and standardize it
+
     def to_tensor(self, gender, dob, test_results):
+        '''
+        Convert the patient's info and test results into 2D tensor, and standardize it
+        Args:
+            gender (int): patient's gender
+            dob (str): patient's date of birth
+            test_results (list): patient's test results, in the order of [date1, value1, date2, value2, ...]
+        Returns:
+            input_tensor (Tensor): the 2D tensor of the patient's info and test results
+                                    With shape (n, 4), n is the number of test results (fixed to 9 in CW3)
+        '''
         dob = datetime.strptime(dob, '%Y-%m-%d')
-        # convert info to 2D tensor with [gender, dob, date, value]
-        # the age computation is not accurate, but will not significantly affect the model
+        # The age computation is not accurate, but will not significantly affect the model
         # python's datetime library is faster
         # 0.25 is used to account for leap years
         age = (datetime.now() - dob).days / 365.25
@@ -94,8 +117,15 @@ class Preprocessor():
         input_tensor = torch.cat((test_results, static_data), 1)
         return self.standardize_tensor(input_tensor)
 
-    # standardize the tensor, using the mean and std computed from the training data
+
     def standardize_tensor(self, input_tensor):
+        '''
+        Standardize the input tensor. Means and stds computed from CW1 training data
+        Args:
+            input_tensor (Tensor): the input tensor to be standardized
+        Returns:
+            input_tensor (Tensor): the standardized input tensor
+        '''
         mean_tensor = torch.tensor(STANDARDIZE_MEAN, dtype=torch.float32)
         std_tensor = torch.tensor(STANDARDIZE_STD, dtype=torch.float32)
         input_tensor = (input_tensor - mean_tensor) / std_tensor

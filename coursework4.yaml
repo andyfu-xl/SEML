@@ -31,8 +31,8 @@ spec:
           image: imperialswemlsspring2024.azurecr.io/coursework4-katehaki
           command: ['/app/main.py']
           args:
-            - '--mllp=katehaki-simulator.hospital:8440'
-            - '--pager=katehaki-simulator.hospital:8441'
+            - '--mllp=$(MLLP_ADDRESS)'
+            - '--pager=$(PAGER_ADDRESS)'
             - '--model=/app/lstm_model.pth'
             - '--history=/hospital-history/history.csv'
           env:

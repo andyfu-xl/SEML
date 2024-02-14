@@ -41,6 +41,11 @@ def main():
         # Pass the message to data parser
         parsed_message = dataparser.parse_message(message)
         
+        if parsed_message == None:
+            print("Invalid message format. Skipping...")
+            communicator.acknowledge()
+            continue
+
         mrn = parsed_message.mrn
 
         # Process message

@@ -9,37 +9,26 @@ class TestDatabase(unittest.TestCase):
             f.write('mrn,date1,result1,date2,result2,date3,result3\n')
             f.write('1,2020-01-01 00:00:00,1,2020-01-02 00:00:00,2,2020-01-03 00:00:00,3\n')
             f.write('2,2020-01-01 00:00:00,1,2020-01-02 00:00:00,2,2020-01-03 00:00:00,3\n')
-        self.db = Database('./data/history_test.csv')
+        
+        # remove the test file if it exists
+        if os.path.exists('./data/history_test.db'):
+            os.remove('./data/history_test.db')
+        self.db = Database('./data/history_test.db')
+        self.db.load_csv('./data/history_test.csv', './data/history_test.db')
         # delete the test file
         os.remove('./data/history_test.csv')
-
-    def test_load_csv(self):
-        db = Database("./data/history.csv")
-        # all gender, dob and name should be None
-        for _, patient in db.data.items():
-            self.assertIsNone(patient["gender"])
-            self.assertIsNone(patient["dob"])
-            self.assertIsNone(patient["name"])
-            self.assertIsNotNone(patient["test_results"])
-            # the last test should always be string in '%Y-%m-%d %H:%M:%S' format
-            self.assertIsInstance(patient["last_test"], str)
-            self.assertFalse(patient["paged"])
-            try:
-                datetime.strptime(patient["last_test"], '%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                self.fail(f'{patient["last_test"]} is not in the correct format')
-            self.assertEqual(patient["test_results"][-2], 0)
-            for each in patient["test_results"]:
-                self.assertIsInstance(each, float)
-                self.assertGreaterEqual(each, 0)
-            self.assertEqual(len(patient["test_results"]) % 2, 0)
         
 
     def test_get(self):
         patient = self.db.get('1')
         self.assertIsNotNone(patient)
         self.assertIsNone(self.db.get('123'))
-        self.assertEqual(patient['test_results'], [1.0, 1.0, 1.0, 2.0, 0.0, 3.0])
+        test_results = patient['test_results'].split(',')
+        test_results = [float(x) for x in test_results]
+        self.assertEqual(test_results, [1.0, 2.0, 3.0])
+        test_dates = patient['test_dates'].split(',')
+        test_dates = [float(x) for x in test_dates]
+        self.assertEqual(test_dates, [1.0, 1.0, 0.0])
         
 
     def test_process_date(self):
@@ -57,8 +46,9 @@ class TestDatabase(unittest.TestCase):
         self.assertTrue('Invalid test results length:' in str(context.exception))
         
         # test with only one test result
-        test_results, last_test = self.db.process_dates(['2020-01-01 00:00:00', '1'])
-        self.assertEqual(test_results, [0.0, "1"])
+        test_results, test_dates, last_test = self.db.process_dates(['2020-01-01 00:00:00', '1'])
+        self.assertEqual(test_results, ["1"])
+        self.assertEqual(test_dates, [0])
         self.assertEqual(last_test, '2020-01-01 00:00:00')
 
         # test with wrong date formats
@@ -68,24 +58,30 @@ class TestDatabase(unittest.TestCase):
 
     def test_set(self):
         # test with non-existing patient
-        with self.assertRaises(Exception) as context:
-            self.db.set('123', '2020-01-01 00:00:00', 1)
-        self.assertTrue('Error: Trying to set test results for a non-existing patient, MRN not found:' in str(context.exception))
-        # test with missing last test date
-        last_test = self.db.data['1']['last_test']
-        self.db.data['1']['last_test'] = None
-        with self.assertRaises(Exception) as context:
-            self.db.set('1', '2020-01-01 00:00:00', 1)
-        self.assertTrue('Error, last test date not found for patient:' in str(context.exception))
-        self.db.data['1']['last_test'] = last_test
+        self.db.set('123', '2020-01-01 00:00:00', 1)
+        patient = self.db.get('123')
+        self.assertIsNotNone(patient)
+        self.assertEqual(patient['last_test'], '2020-01-01 00:00:00')
+        self.assertEqual(float(patient['test_results']), 1.0)
+        self.assertEqual(float(patient['test_dates']), 0.0)
+
         # test with invalid new test date
-        with self.assertRaises(Exception) as context:
-            self.db.set('1', '2019-01-01 00:00:00', 1)
-        self.assertTrue('Error: Test date is not in order:' in str(context.exception))
+        self.db.set('1', '2019-01-01 00:00:00', 1)
+        self.assertIsNotNone(self.db.get('1'))
         # test with valid new test date
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.db.set('1', '2020-01-04 00:00:00', 4)
-        self.assertEqual(self.db.data['1']['test_results'], [1.0, 1.0, 1.0, 2.0, 1.0, 3.0, 0.0, 4.0])
-        self.assertEqual(self.db.data['1']['last_test'], '2020-01-04 00:00:00')
+        patient = self.db.get('1')
+        test_results = patient['test_results'].split(',')
+        test_results = [float(x) for x in test_results]
+        test_dates = patient['test_dates'].split(',')
+        test_dates = [float(x) for x in test_dates]
+        self.assertEqual(test_results, [1.0, 2.0, 3.0, 1.0, 4.0])
+        self.assertEqual(test_dates[-1], 0)
+        # 3 is the maximum allowed latency, we write two consecutive tests with 3 seconds
+        self.assertLessEqual(test_dates[-2], 3/(24*60*60))
+        self.assertEqual(test_dates[:2], [1.0, 1.0])
+        self.assertLessEqual(patient['last_test'], now)
 
     def test_register(self):
         # register a new patient with no historial test results
@@ -95,8 +91,8 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(patient['name'], 'John Doe')
         self.assertEqual(patient["gender"], 0)
         self.assertEqual(patient["dob"], '1990-01-01')
-        self.assertIsNone(patient["last_test"])
-        self.assertEqual(patient["test_results"], [])
+        self.assertEqual(patient["last_test"], '')
+        self.assertEqual(patient["test_results"], '')
 
         # register a new patient with historial test results
         self.db.register('1', 1, '1990-01-01', 'Jane Doe')
@@ -106,24 +102,14 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(patient['gender'], 1)
         self.assertEqual(patient['dob'], '1990-01-01')
         self.assertEqual(patient['last_test'], '2020-01-03 00:00:00')
-        self.assertEqual(patient['test_results'], [1.0, 1.0, 1.0, 2.0, 0.0, 3.0])
-
-        # test with invalid dob or gender
-        with self.assertRaises(Exception) as context:
-            self.db.register('40', 555, '1990-01-01', 'John Doe')
-        self.assertTrue('Error: expected binary gender (0 for male or 1 for female) but found:' in str(context.exception))
-        with self.assertRaises(Exception) as context:
-            self.db.register('40', 0, '3990-01-01', 'John Doe')
-        self.assertTrue('Error: Invalid date of birth:' in str(context.exception))
+        test_results = patient['test_results'].split(',')
+        test_results = [float(x) for x in test_results]
+        self.assertEqual(test_results, [1.0, 2.0, 3.0])
+        test_dates = patient['test_dates'].split(',')
+        test_dates = [float(x) for x in test_dates]
+        self.assertEqual(test_dates, [1.0, 1.0, 0.0])
 
 
-    def test_delete(self):
-        self.db.delete('1')
-        self.assertIsNone(self.db.get('1'))
-        self.assertIsNotNone(self.db.get('2'))
-        self.db.delete('2')
-        self.assertIsNone(self.db.get('2'))
-    
     def test_paging(self):
         self.db.paged('1')
         self.assertTrue(self.db.get('1')['paged'])

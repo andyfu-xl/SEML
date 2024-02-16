@@ -40,7 +40,6 @@ class Preprocessor():
             return
         # delete patient
         elif self.message.message_type == 'ADT^A03':
-            #self.database.delete(self.message.mrn)
             return
         # test result
         elif self.message.message_type == 'ORU^R01':
@@ -50,19 +49,26 @@ class Preprocessor():
                 return None
             gender = patient_data['gender']
             dob = patient_data['dob']
-            if gender is None or dob is None:
+            # TODO: if gender or dob is empty, we should use an alternative model
+            if gender == "" or dob =="":
                 raise Exception('Error: empty gender or dob, please register patient first')
             self.database.set(self.message.mrn, self.message.obr_timestamp, self.message.obx_value)
-            test_results = patient_data['test_results']
+            patient_data = self.database.get(self.message.mrn)
+            test_results = patient_data['test_results'].split(',')
+            test_results = [float(x) for x in test_results]
+            test_dates = patient_data['test_dates'].split(',')
+            test_dates = [float(x) for x in test_dates]
             # only look at the last 9 test results
             # if there is only one test result, we just skip it
-            if len(test_results) <= 2:
+            if len(test_results) <= 1:
                 return None
-            if len(test_results) > 18:
-                test_results = test_results[-18:]
-            if len(test_results) < 18:
-                test_results = [0] * (18 - len(test_results)) + test_results
-            input_tensor = self.to_tensor(gender=gender, dob=dob, test_results=test_results).view(1, -1, 4)
+            if len(test_results) > 9:
+                test_results = test_results[-9:]
+                test_dates = test_dates[-9:]
+            if len(test_results) < 9:
+                test_results = [0] * (9 - len(test_results)) + test_results
+                test_dates = [0] * (9 - len(test_dates)) + test_dates
+            input_tensor = self.to_tensor(gender=gender, dob=dob, test_results=test_results, test_dates=test_dates).view(1, -1, 4)
             input_tensor[input_tensor > 100] = 100
             return input_tensor
     
@@ -94,7 +100,7 @@ class Preprocessor():
             raise Exception('Error: Invalid message type:', self.message.message_type)
 
 
-    def to_tensor(self, gender, dob, test_results):
+    def to_tensor(self, gender, dob, test_results, test_dates):
         '''
         Convert the patient's info and test results into 2D tensor, and standardize it
         Args:
@@ -112,9 +118,10 @@ class Preprocessor():
         age = (datetime.now() - dob).days / 365.25
         static_data = torch.tensor([age, gender], dtype=torch.float32)
         test_results = [float(x) for x in test_results]
-        static_data = static_data.repeat(int(len(test_results)/2), 1)
-        test_results = torch.tensor(test_results, dtype=torch.float32).view(-1, 2)
-        input_tensor = torch.cat((test_results, static_data), 1)
+        static_data = static_data.repeat(len(test_results), 1)
+        # concate a and b
+        dates_results = torch.cat((torch.tensor(test_dates), torch.tensor(test_results)), 0).view(2, -1)
+        input_tensor = torch.cat((dates_results, static_data.T), 0).T
         return self.standardize_tensor(input_tensor)
 
 

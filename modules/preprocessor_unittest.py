@@ -14,7 +14,11 @@ class TestPreprocessor(unittest.TestCase):
             f.write('1,2020-01-01 00:00:00,1,2020-01-02 00:00:00,2\n')
             f.write('2,2020-01-01 00:00:00,1,2020-01-02 00:00:00,2,2020-01-03 00:00:00,3\n')
             f.write('10,2020-01-01 00:00:00,1,2020-01-02 00:00:00,2,2020-01-03 00:00:00,3,2020-01-04 00:00:00,4,2020-01-05 00:00:00,5,2020-01-06 00:00:00,6,2020-01-07 00:00:00,7,2020-01-08 00:00:00,8,2020-01-09 00:00:00,9,2020-01-10 00:00:00,10\n')
-        self.db = Database('../data/history_test.csv')
+        # remove the test file if it exists
+        if os.path.exists('../data/history_test.db'):
+            os.remove('../data/history_test.db')
+        self.db = Database('../data/history_test.db')
+        self.db.load_csv('../data/history_test.csv', '../data/history_test.db')
         # delete the test file
         os.remove('../data/history_test.csv')
         self.preprocessor = Preprocessor(self.db)
@@ -53,7 +57,7 @@ class TestPreprocessor(unittest.TestCase):
         # test if the preprocessor raises the expected exception for non-registered patients
         with self.assertRaises(Exception) as context:
             self.preprocessor.preprocess(self.result4)
-        self.assertTrue("Error: empty gender or dob, please register patient first" in str(context.exception))
+        self.assertTrue('Error: empty gender or dob, please register patient first' in str(context.exception))
 
         # test if the preprocessor returns None for ADT^A01 and ADT^A03 messages
         self.assertEqual(self.preprocessor.preprocess(self.result1), None)
@@ -85,6 +89,7 @@ class TestPreprocessor(unittest.TestCase):
                                          [ time_interval, standardized_test_result1,standardized_age, 0],
                                          [time_interval, standardized_test_result2,standardized_age, 0],
                                          [(0-DATE_MEAN)/DATE_STD, standardized_test_result3, standardized_age, 0]]])
+
         self.assertTrue(torch.allclose(output_tensor, expected_tensor, atol=1e-8))
 
         # test if the preprocessor limits the number of test results to 9

@@ -14,11 +14,12 @@ def main():
     parser.add_argument('--pager', type=str, help="Address to page requests via HTTP")
     parser.add_argument('--history', type=str, help="Path to the history CSV file", default="./data/history.csv")
     parser.add_argument('--model', type=str, help="Path to the model file", default="./lstm_model.pth")
+    parser.add_argument('--database', type=str, help="Path to the database .db file", default="./data/database.db")
     flags = parser.parse_args()
 
     communicator = Communicator(flags.mllp, flags.pager)
     dataparser = DataParser()
-    database = Database()
+    database = Database(flags.database)
     database.load_csv(flags.history)
     preprocessor = Preprocessor(database)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -22,7 +22,7 @@ def main():
     communicator = Communicator(flags.mllp, flags.pager)
     dataparser = DataParser()
     database = Database(flags.database)
-    database.load_csv(flags.history)
+    database.load_csv(flags.history, flags.database)
     preprocessor = Preprocessor(database)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model(flags.model).to(device)

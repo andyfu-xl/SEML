@@ -23,8 +23,8 @@ class Database:
                gender INTEGER,
                name TEXT,
                last_test TEXT,
-               test_results REAL,
-               test_dates REAL,
+               test_results TEXT,
+               test_dates TEXT,
                paged INTEGER)''')
         self.conn.commit()
         
@@ -140,15 +140,16 @@ class Database:
             self.curs.execute("SELECT test_results, test_dates, last_test FROM patients_info WHERE mrn=?", (mrn,))
             existing_data = self.curs.fetchone()
             test_results, test_dates, last_test = existing_data
-            last_date = datetime.strptime(last_test, '%Y-%m-%d %H:%M:%S')
-            strp_new_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
-            # error handling: when the new test date is in incorrect order, change the test date to the current date
-            # TODO: in data parser, we could set the date to a very old date to trigger the if statement
-            # or we can let the data parser to convert the date to the current date
-            if strp_new_date < last_date:
-                strp_new_date = datetime.now()
-                date = strp_new_date.strftime('%Y-%m-%d %H:%M:%S')
-            if test_dates:
+            if last_test != '':
+                
+                last_date = datetime.strptime(last_test, '%Y-%m-%d %H:%M:%S')
+                strp_new_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+                # error handling: when the new test date is in incorrect order, change the test date to the current date
+                # TODO: in data parser, we could set the date to a very old date to trigger the if statement
+                # or we can let the data parser to convert the date to the current date
+                if strp_new_date < last_date:
+                    strp_new_date = datetime.now()
+                    date = strp_new_date.strftime('%Y-%m-%d %H:%M:%S')
                 test_results = test_results + ',' + str(value) if test_results else str(value)
                 test_dates = test_dates.split(',')
                 test_dates[-1] = (strp_new_date - last_date).total_seconds() / (60*60*24)

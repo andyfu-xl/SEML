@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import torch
+import logging
 
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
@@ -16,13 +17,15 @@ def main():
     parser.add_argument('--history', type=str, help="Path to the history CSV file", default="./data/history.csv")
     parser.add_argument('--model', type=str, help="Path to the model file", default="./lstm_model.pth")
     parser.add_argument('--database', type=str, help="Path to the database .db file", default="./data/database.db")
+    parser.add_argument('--log', type=str, help="Path to the logging file", default="./logs/error.log")
     flags = parser.parse_args()
     print("Flags:", flags)
 
+    logging.basicConfig(filename=flags.log, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     communicator = Communicator(flags.mllp, flags.pager)
     dataparser = DataParser()
     database = Database(flags.database)
-    database.load_csv(flags.history, flags.database)
+    # database.load_csv(flags.history, flags.database)
     preprocessor = Preprocessor(database)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model(flags.model).to(device)
@@ -35,9 +38,9 @@ def main():
         message = communicator.receive()
         print(message)
         if message == None:
-            print("No message received. Exiting...")
-            communicator.close()
-            break
+            print("No message received. Trying to reconnect...")
+            communicator.connect()
+            continue
 
         # Pass the message to data parser
         parsed_message = dataparser.parse_message(message)
@@ -48,6 +51,7 @@ def main():
             continue
 
         mrn = parsed_message.mrn
+        timestamp = parsed_message.msg_timestamp
 
         # Process message
         preprocessed_message = preprocessor.preprocess(parsed_message)
@@ -60,7 +64,7 @@ def main():
         print(f"Patient {mrn} has AKI? {'Yes' if has_aki else 'No'}")
         # Page (if necessary)
         if has_aki:
-            communicator.page(mrn)
+            communicator.page(mrn, timestamp)
             database.paged(mrn)
             print(f"Patient {mrn} has been paged.")
 

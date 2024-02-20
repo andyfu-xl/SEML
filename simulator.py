@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
+import http.server
 import signal
 import socket
 import threading
 import time
-import http.server
 
 VERSION = "0.0.0"
 MLLP_BUFFER_SIZE = 1024
@@ -130,38 +131,11 @@ class PagerRequestHandler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         self.server_version = f"coursework3-simulator/{VERSION}"
         if self.path == "/page":
-            length = 0
-            try:
-                length = int(self.headers["Content-Length"])
-            except Exception:
-                print("pager: bad request: no Content-Length")
-                self.send_response(http.HTTPStatus.BAD_REQUEST, "No Content-Length")
-                self.end_headers()
-                return
-            mrn = 0
-            try:
-                mrn = int(self.rfile.read(length))
-            except:
-                print("pager: bad request: no MRN for /page")
-                self.send_response(http.HTTPStatus.BAD_REQUEST, "Bad MRN in body")
-                self.end_headers()
-                return
-            print(f"pager: paging for MRN {mrn}")
-            self.send_response(http.HTTPStatus.OK)
-            self.send_header("Content-Type", "text/plain")
-            self.end_headers()
-            self.wfile.write(b"ok\n")
+            self.do_POST_page()
         elif self.path == "/healthy":
-            self.send_response(http.HTTPStatus.OK)
-            self.send_header("Content-Type", "text/plain")
-            self.end_headers()
-            self.wfile.write(b"ok\n")
+            self.do_POST_healthy()
         elif self.path == "/shutdown":
-            self.send_response(http.HTTPStatus.OK)
-            self.send_header("Content-Type", "text/plain")
-            self.end_headers()
-            self.wfile.write(b"ok\n")
-            self.shutdown()
+            self.do_POST_shutdown()
         else:
             print("pager: bad request: not /page")
             self.send_response(http.HTTPStatus.BAD_REQUEST)
@@ -169,6 +143,59 @@ class PagerRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         self.do_POST()
+
+    def do_POST_page(self):
+        length = 0
+        try:
+            length = int(self.headers["Content-Length"])
+        except Exception:
+            print("pager: bad request: no Content-Length")
+            self.send_response(http.HTTPStatus.BAD_REQUEST, "No Content-Length")
+            self.end_headers()
+            return
+        error = None
+        mrn = None
+        timestamp = None
+        parts = str(self.rfile.read(length), "ascii").split(",")
+        if len(parts) < 3:
+            mrn = 0
+            try:
+                mrn = int(parts[0])
+            except:
+                error = "bad MRN in body"
+            if not error and len(parts) == 2:
+                try:
+                    timestamp = datetime.datetime.strptime(parts[1], "%Y%m%d%H%M%S")
+                except:
+                    error = "bad timestamp in body"
+        else:
+            error = "expected at most two values: mrn,timestamp"
+        if error:
+                print("pager: " + error)
+                self.send_response(http.HTTPStatus.BAD_REQUEST, error)
+                self.end_headers()
+                return
+        if timestamp:
+            print(f"pager: paging for MRN {mrn} at {timestamp}")
+        else:
+            print(f"pager: paging for MRN {mrn}")
+        self.send_response(http.HTTPStatus.OK)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"ok\n")
+
+    def do_POST_healthy(self):
+        self.send_response(http.HTTPStatus.OK)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"ok\n")
+
+    def do_POST_shutdown(self):
+        self.send_response(http.HTTPStatus.OK)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"ok\n")
+        self.shutdown()
 
     def log_message(*args):
         pass # Prevent default logging

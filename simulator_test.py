@@ -122,18 +122,50 @@ class SimulatorTest(unittest.TestCase):
             self.assertEqual(runs[i], runs[0])
 
     def test_page_with_valid_mrn(self):
-            mrn = b"1234"
-            r = urllib.request.urlopen(f"http://localhost:{TEST_PAGER_PORT}/page", data=mrn)
-            self.assertEqual(r.status, http.HTTPStatus.OK)
+        data = b"1234"
+        r = urllib.request.urlopen(f"http://localhost:{TEST_PAGER_PORT}/page", data=data)
+        self.assertEqual(r.status, http.HTTPStatus.OK)
 
     def test_page_with_bad_mrn(self):
-        mrn = b"NHS1234"
+        data = b"NHS1234"
         try:
-            urllib.request.urlopen(f"http://localhost:{TEST_PAGER_PORT}/page", data=mrn)
+            urllib.request.urlopen(f"http://localhost:{TEST_PAGER_PORT}/page", data=data)
         except urllib.error.HTTPError as e:
             self.assertEqual(e.status, http.HTTPStatus.BAD_REQUEST)
         else:
             self.fail("Expected /page to return an error with a bad MRN")
+
+    def test_page_with_valid_mrn_and_valid_timestamp(self):
+        data = b"1234,202401221000"
+        r = urllib.request.urlopen(f"http://localhost:{TEST_PAGER_PORT}/page", data=data)
+        self.assertEqual(r.status, http.HTTPStatus.OK)
+
+    def test_page_with_valid_mrn_and_bad_timestamp(self):
+        data = b"1234,2024/01/22 10:00"
+        try:
+            urllib.request.urlopen(f"http://localhost:{TEST_PAGER_PORT}/page", data=data)
+        except urllib.error.HTTPError as e:
+            self.assertEqual(e.status, http.HTTPStatus.BAD_REQUEST)
+        else:
+            self.fail("Expected /page to return an error with a bad timestamp")
+
+    def test_page_with_bad_mrn_and_valid_timestamp(self):
+        data = b"NHS1234,202401221000"
+        try:
+            urllib.request.urlopen(f"http://localhost:{TEST_PAGER_PORT}/page", data=data)
+        except urllib.error.HTTPError as e:
+            self.assertEqual(e.status, http.HTTPStatus.BAD_REQUEST)
+        else:
+            self.fail("Expected /page to return an error with a bad MRN")
+
+    def test_page_with_too_many_values(self):
+        data = b"1234,202401221000,unused"
+        try:
+            urllib.request.urlopen(f"http://localhost:{TEST_PAGER_PORT}/page", data=data)
+        except urllib.error.HTTPError as e:
+            self.assertEqual(e.status, http.HTTPStatus.BAD_REQUEST)
+        else:
+            self.fail("Expected /page to return an error with too many values")
 
     def tearDown(self):
         try:

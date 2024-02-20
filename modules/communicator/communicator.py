@@ -20,20 +20,39 @@ class Communicator():
     '''
     def __init__(self, mllp_address=None, pager_address=None):
         '''Constructor for the Communicator class.'''
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
         if pager_address is not None:
             self.pager_address = pager_address.replace("https://", "").replace("http://", "")
 
         if mllp_address is not None:
             self.mllp_address = mllp_address.replace("https://", "").replace("http://", "")
-            self.connect(mllp_address)
+            self.host, self.port = self.mllp_address.split(":")
+            self.connect()
 
     # MLLP server
-    def connect(self, mllp_address):
-        '''Connects to the MLLP server.'''
-        host, port = mllp_address.split(":")
-        self.socket.connect((host, int(port)))
+    def connect(self):
+        '''
+        Connects to the MLLP server. Retries 10 times with an increasing delay if the connection fails.
+        '''
+        max_retries = 10
+        retry_delay = 5  # Initial delay of 5 seconds
+        delay_increment = 2
+
+        for _ in range(max_retries):
+            try:
+                print(f"Attempting to connect to {self.host}:{self.port}...")
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.socket.connect((self.host, int(self.port)))
+                print(f"Connected to MLLP server at {self.host}:{self.port}.")
+                return
+            except Exception as e:
+                print(f"Error occurred while trying to connect to MLLP server: {e}")
+                print(f"Retrying in {retry_delay} seconds...")
+                self.close()
+                time.sleep(retry_delay)
+                retry_delay += delay_increment  # Linear backoff
+
+        print("Maximum retry attempts reached. Could not connect to MLLP server.")
+        exit(1)
 
     def receive(self):
         '''Receives a message from the MLLP server.
@@ -44,13 +63,19 @@ class Communicator():
         Returns:
             - message (bytes): The message received from the MLLP server.
         '''
-        message = b""
-        while MLLPDelimiter.END_OF_BLOCK.value not in message:
-            buffer = self.socket.recv(1024)
-            if len(buffer) == 0:
-                return None
-            message += buffer
-        return message
+        try:
+            message = b""
+            while MLLPDelimiter.END_OF_BLOCK.value not in message:
+                buffer = self.socket.recv(1024)
+                if len(buffer) == 0:
+                    return None
+                message += buffer
+            return message
+        except Exception as e:
+            print(f"Error occurred while trying to receive message from MLLP server: {e}")
+            self.connect()
+            message = self.receive()
+            return message
     
     def acknowledge(self):
         '''Sends an acknowledgment message to the MLLP server with the current time.'''
@@ -74,18 +99,35 @@ class Communicator():
         return m
     
     # Pager server
-    def page(self, mrn):
+    def page(self, mrn, timestamp=None):
         '''Sends a page request to the Pager server.
 
         Args:
             - mrn (str): The medical record number of the patient to page.
+            - timestamp (str): The timestamp of the message.
         '''
-        mrn_bytes = bytes(mrn, "ascii")
-        r = urllib.request.urlopen(
-            f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
-            data=mrn_bytes
-        )
-        return r
+        request = mrn
+        if timestamp is not None:
+            request = f"{mrn},{timestamp}"
+        request_bytes = bytes(request, "ascii")
+
+        max_retries = 3 # Shorter retry attempts for paging to avoid delays
+        retry_delay = 3 
+        for _ in range(max_retries):
+            try:
+                r = urllib.request.urlopen(
+                    f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
+                    data=request_bytes
+                )
+                return r
+            except Exception as e:
+                print(f"Error occurred while trying to page {mrn}: {e}")
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+        
+        print(f"Maximum retry attempts reached. Could not page {mrn}.")
+        return None
+        
 
     def shutdown_server(self):
         '''Sends a shutdown request to the Pager server.'''

@@ -10,6 +10,7 @@ COPY integration_test.py /app/
 
 # Copy Data
 COPY data /app/data
+COPY data/database.db /data/database.db
 
 # Copy Logs
 COPY logs /app/logs
@@ -20,4 +21,4 @@ COPY modules /app/modules
 RUN chmod +x /app/main.py
 EXPOSE 8440
 EXPOSE 8441
-CMD /app/main.py --mllp=$MLLP_ADDRESS --pager=$PAGER_ADDRESS --history="/app/data/history.csv" --model="/app/lstm_model.pth"
+CMD /app/main.py --mllp=$MLLP_ADDRESS --pager=$PAGER_ADDRESS --history="/app/data/history.csv" --model="/app/lstm_model.pth" --log="/app/logs/error.log"

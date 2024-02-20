@@ -2,7 +2,7 @@ from . import messagetypes
 # import messagetypes
 import logging
 
-logging.basicConfig(filename='logs/error.log',level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='/app/logs/error.log',level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class DataParser():
     '''

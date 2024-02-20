@@ -21,6 +21,7 @@ def serve_mllp_client(client, source, messages, shutdown_mllp, short_messages):
             mllp += messages[i]
             mllp += bytes(chr(MLLP_END_OF_BLOCK) + chr(MLLP_CARRIAGE_RETURN), "ascii")
             if not short_messages:
+                print(mllp)
                 client.sendall(mllp)
             else:
                 client.sendall(mllp[:len(mllp)//2])

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import torch
-
+import time
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
 from modules.database import Database
@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--pager', type=str, help="Address to page requests via HTTP")
     parser.add_argument('--history', type=str, help="Path to the history CSV file", default="./data/history.csv")
     parser.add_argument('--model', type=str, help="Path to the model file", default="./lstm_model.pth")
-    parser.add_argument('--database', type=str, help="Path to the database .db file", default="./data/database.db")
+    parser.add_argument('--database', type=str, help="Path to the database .db file", default="./data/database.sqlite")
     flags = parser.parse_args()
 
     communicator = Communicator(flags.mllp, flags.pager)
@@ -27,6 +27,7 @@ def main():
 
     while True:
         # Receive message
+        # start_time = time.time()
         message = communicator.receive()
         if message == None:
             communicator.close()
@@ -44,14 +45,15 @@ def main():
         has_aki = False
         if preprocessed_message is not None:
             has_aki = inference(model, preprocessed_message.to(device))
-        
         # Page (if necessary)
         if has_aki:
             communicator.page(mrn)
             database.paged(mrn)
-
         # Acknowledge message
         communicator.acknowledge()
+        # runtime = time.time() - start_time
+        # if runtime >= 3:
+        # print(f"Processed message for MRN {mrn} in {runtime:.2f} seconds")
 
 if __name__ == "__main__":
     main()

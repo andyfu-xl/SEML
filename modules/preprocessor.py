@@ -52,7 +52,8 @@ class Preprocessor():
             # TODO: if gender or dob is empty, we should use an alternative model
             if gender == "" or dob =="":
                 raise Exception('Error: empty gender or dob, please register patient first')
-            self.database.set(self.message.mrn, self.message.obr_timestamp, self.message.obx_value)
+            obx_value = min(float(self.message.obx_value), 500)
+            self.database.set(self.message.mrn, self.message.obr_timestamp, obx_value)
             patient_data = self.database.get(self.message.mrn)
             test_results = patient_data['test_results'].split(',')
             test_results = [float(x) for x in test_results]
@@ -69,7 +70,7 @@ class Preprocessor():
                 test_results = [0] * (9 - len(test_results)) + test_results
                 test_dates = [0] * (9 - len(test_dates)) + test_dates
             input_tensor = self.to_tensor(gender=gender, dob=dob, test_results=test_results, test_dates=test_dates).view(1, -1, 4)
-            input_tensor[input_tensor > 100] = 100
+            # input_tensor[input_tensor > 100] = 100
             return input_tensor
     
 

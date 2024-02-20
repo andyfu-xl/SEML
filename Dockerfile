@@ -11,6 +11,9 @@ COPY integration_test.py /app/
 # Copy Data
 COPY data /app/data
 
+# Copy Logs
+COPY logs /app/logs
+
 # Copy Modules
 COPY modules /app/modules
 

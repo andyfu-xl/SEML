@@ -1,4 +1,8 @@
 from . import messagetypes
+# import messagetypes
+import logging
+
+logging.basicConfig(filename='logs/error.log',level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class DataParser():
     '''
@@ -56,16 +60,21 @@ class DataParser():
         Argument:
             message_segment: list(str) [The list of segments of the message]
         '''
-        msh_segment = message_segment[0]
-        msg_type = msh_segment.split('|')[8]
-        if msg_type == self.ORU:
-            return self.ORU
-        elif msg_type == self.A01:
-            return self.A01
-        elif msg_type == self.A03:
-            return self.A03
-        else:
-            raise ValueError('Invalid message type:', msg_type)
+        try:
+            msh_segment = message_segment[0]
+            msg_type = msh_segment.split('|')[8]
+            if msg_type == self.ORU:
+                return self.ORU
+            elif msg_type == self.A01:
+                return self.A01
+            elif msg_type == self.A03:
+                return self.A03
+            else:
+                logging.error(f'Invalid message type: {msg_type}')
+                return msg_type
+        except Exception:
+            logging.error('Invalid message format: missing required fields')
+            return None
 
     def parse_message(self, message: bytes):
         '''
@@ -82,18 +91,21 @@ class DataParser():
         message_obj = None
         if msg_type == self.ORU:
             message_obj = messagetypes.Oru_r01()
-            message_obj.process_message(message_segments)
-            return message_obj
+            is_processed = message_obj.process_message(message_segments)
         elif msg_type == self.A01:
             message_obj = messagetypes.Adt_a01()
-            message_obj.process_message(message_segments)
-            return message_obj
+            is_processed = message_obj.process_message(message_segments)
         elif msg_type == self.A03:
             message_obj = messagetypes.Adt_a03()
-            message_obj.process_message(message_segments)
+            is_processed = message_obj.process_message(message_segments)
+        else:
+            logging.error(f'Error while parsing: {message}')
+            return None
+        
+        if is_processed:
             return message_obj
         else:
-            raise ValueError('Invalid message type:', msg_type)
+            return None
 
 if __name__ == '__main__':
     adt_ao1_message = b'\x0bMSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5\rPID|1||497030||ROSCOE DOHERTY||19870515|M\r\x1c\r'

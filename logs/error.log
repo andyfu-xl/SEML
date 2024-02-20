@@ -1,0 +1,35 @@
+2024-02-14 18:02:53,015 - root - ERROR - Invalid message type: 
+2024-02-14 18:02:53,015 - root - ERROR - Error while parsing: MSH|^~\&|SIMULATION|SOUTH R|20240331113300||ORU^R01|||2.5PID|1||257406OBR|1||||||20240331113ININE||92.95579346699137
+2024-02-14 18:02:53,015 - root - ERROR - Invalid message type: 
+2024-02-14 18:02:53,015 - root - ERROR - Invalid message type: ADT^A04
+2024-02-14 18:02:53,015 - root - ERROR - Invalid message type: 
+2024-02-14 18:02:53,017 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:02:53,017 - root - ERROR - Error while parsing: MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||2024033
+2024-02-14 18:02:53,017 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:02:53,017 - root - ERROR - Error while parsing: 
+2024-02-14 18:02:53,017 - root - ERROR - Invalid message type: M
+2024-02-14 18:02:53,017 - root - ERROR - Error while parsing: PID|1||497030||ROSCOE DOHERTY||19870515|MMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5
+2024-02-14 18:09:05,693 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:05,694 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,090 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields
+2024-02-14 18:09:32,091 - root - ERROR - Invalid message format: missing required fields

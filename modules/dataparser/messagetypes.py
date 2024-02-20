@@ -1,4 +1,7 @@
 from datetime import datetime
+import logging
+
+logging.basicConfig(filename='logs/error.log',level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class MLLPMessage:
     '''
@@ -43,27 +46,33 @@ class Adt_a01(MLLPMessage):
         Arguments:
             message_segments: list[str] [The list of segments of the message]
         '''
-        msh = message_segments[0].split('|')
-        pid = message_segments[1].split('|')
-        self.msg_timestamp = msh[6]
-        self.mrn = pid[3]
-        self.name = pid[5]
-        self.dob = datetime.strptime(pid[7], '%Y%m%d').strftime('%Y-%m-%d')
-        self.gender = pid[8]
-        if not self.msg_timestamp or \
-           not self.mrn or \
-           not self.name or \
-           not self.dob or \
-           not self.gender:
-            raise ValueError('Invalid message format: missing required fields')
-        # parse gender after checking for missing fields, as gender = 0 may trigger a Exception
-        if self.gender == 'M':
-            self.gender = 0
-        elif self.gender == 'F':
-            self.gender = 1
-        else:
-            raise Exception('Error: expected binary gender (F or M) but found:',self.gender)
-        return self
+        try:
+            msh = message_segments[0].split('|')
+            pid = message_segments[1].split('|')
+            self.msg_timestamp = msh[6]
+            self.mrn = pid[3]
+            self.name = pid[5]
+            self.dob = datetime.strptime(pid[7], '%Y%m%d').strftime('%Y-%m-%d')
+            self.gender = pid[8]
+            if not self.msg_timestamp or \
+                not self.mrn or \
+                not self.name or \
+                not self.dob or \
+                not self.gender:
+                logging.error('Invalid message format: missing required fields')
+                return False
+            # parse gender after checking for missing fields, as gender = 0 may trigger a Exception
+            if self.gender == 'M':
+                self.gender = 0
+            elif self.gender == 'F':
+                self.gender = 1
+            else:
+                logging.error(f'Error: expected binary gender (F or M) but found: {self.gender}')
+                return False
+        except Exception:
+            logging.error('Invalid message format: missing required fields')
+            return False
+        return True
 
 
 class Adt_a03(MLLPMessage):
@@ -92,13 +101,18 @@ class Adt_a03(MLLPMessage):
         Arguments:
             message_segments: list[str] [The list of segments of the message]
         '''
-        msh = message_segments[0].split('|')
-        pid = message_segments[1].split('|')
-        self.msg_timestamp = msh[6]
-        self.mrn = pid[3]
-        if not self.msg_timestamp or not self.mrn:
-            raise ValueError('Invalid message format: missing required fields')
-        return self
+        try:
+            msh = message_segments[0].split('|')
+            pid = message_segments[1].split('|')
+            self.msg_timestamp = msh[6]
+            self.mrn = pid[3]
+            if not self.msg_timestamp or not self.mrn:
+                logging.error('Invalid message format: missing required fields')
+                return False
+        except Exception:
+            logging.error('Invalid message format: missing required fields')
+            return False
+        return True
 
 class Oru_r01(MLLPMessage):
     '''
@@ -135,19 +149,24 @@ class Oru_r01(MLLPMessage):
         Arguments:
             message_segments: list[str] [The list of segments of the message]
         '''
-        msh = message_segments[0].split('|')
-        pid = message_segments[1].split('|')
-        obr = message_segments[2].split('|')
-        obx = message_segments[3].split('|')
-        self.msg_timestamp = msh[6]
-        self.mrn = pid[3]
-        self.obr_timestamp =  datetime.strptime(obr[7], '%Y%m%d%H%M%S').strftime('%Y-%m-%d %H:%M:%S')
-        self.obx_type = obx[3]
-        self.obx_value = float(obx[5])
-        if not self.msg_timestamp or \
-           not self.mrn or \
-           not self.obr_timestamp or \
-           not self.obx_type or \
-           not self.obx_value:
-            raise ValueError('Invalid message format: missing required fields')
-        return self
+        try:
+            msh = message_segments[0].split('|')
+            pid = message_segments[1].split('|')
+            obr = message_segments[2].split('|')
+            obx = message_segments[3].split('|')
+            self.msg_timestamp = msh[6]
+            self.mrn = pid[3]
+            self.obr_timestamp =  datetime.strptime(obr[7], '%Y%m%d%H%M%S').strftime('%Y-%m-%d %H:%M:%S')
+            self.obx_type = obx[3]
+            self.obx_value = float(obx[5])
+            if not self.msg_timestamp or \
+            not self.mrn or \
+            not self.obr_timestamp or \
+            not self.obx_type or \
+            not self.obx_value:
+                logging.error('Invalid message format: missing required fields')
+                return False
+        except Exception:
+            logging.error('Invalid message format: missing required fields')
+            return False
+        return True

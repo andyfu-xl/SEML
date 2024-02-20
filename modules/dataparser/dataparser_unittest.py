@@ -94,18 +94,18 @@ class DataparserUnitTest(unittest.TestCase):
 
     def test_get_message_type_invalid(self):
         message_segment = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A04|||2.5']
-        with self.assertRaises(ValueError):
-            self.obj.get_message_type(message_segment)
+        msg_type = self.obj.get_message_type(message_segment)
+        self.assertEqual(msg_type, 'ADT^A04')
 
     def test_get_message_type_empty(self):
         message_segment = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800|||||2.5']
-        with self.assertRaises(ValueError):
-            self.obj.get_message_type(message_segment)
+        msg_type = self.obj.get_message_type(message_segment)
+        self.assertEqual(msg_type, '')
 
     def test_get_message_type_no_message_type(self):
         message_segment = ['MSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||||2.5']
-        with self.assertRaises(ValueError):
-            self.obj.get_message_type(message_segment)
+        msg_type = self.obj.get_message_type(message_segment)
+        self.assertEqual(msg_type, '')
 
     ### For process_message function
     def test_process_message_ORU_R01(self):
@@ -126,6 +126,47 @@ class DataparserUnitTest(unittest.TestCase):
         result = self.obj.parse_message(message)
         self.assertEqual(result.message_type, expected_result)
 
+    def test_process_message_multiple_start_characters(self):
+        message = b'\x0b\x0bMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5\rPID|1||829339\r\x1c\r'
+        expected_result = 'ADT^A03'
+        result = self.obj.parse_message(message)
+        self.assertEqual(result.message_type, expected_result)
+
+    def test_process_message_multiple_end_characters(self):
+        message = b'\x0bMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5\rPID|1||829339\r\x1c\x1c\x1c\r'
+        expected_result = 'ADT^A03'
+        result = self.obj.parse_message(message)
+        self.assertEqual(result.message_type, expected_result)
+
+    def test_process_message_no_end_characters(self):
+        message = b'\x0bMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||20240331035800||ADT^A03|||2.5\rPID|1||829339\r'
+        expected_result = 'ADT^A03'
+        result = self.obj.parse_message(message)
+        self.assertEqual(result.message_type, expected_result)
+
+    def test_process_message_broken_message_MSH(self):
+        message = b'\x0bMSH|^~\&|SIMULATION|SOUTH RIVERSIDE|||2024033'
+        expected_result = None
+        result = self.obj.parse_message(message)
+        self.assertEqual(result, expected_result)
+
+    def test_get_message_type_broken_message_MSH_PID(self):
+        message = b'\x0bMSH|^~\&|SIMULATION|SOUTH R|20240331113300||ORU^R01|||2.5\rPID|1||257406\rOBR|1||||||20240331113ININE||92.95579346699137\r\x1c\r'
+        expected_result = None
+        result = self.obj.parse_message(message)
+        self.assertEqual(result, expected_result)
+
+    def test_process_message_empty_message(self):
+        message = b''
+        expected_result = None
+        result = self.obj.parse_message(message)
+        self.assertEqual(result, expected_result)
+
+    def test_process_message_jumbled_order(self):
+        message = b'\x0bPID|1||497030||ROSCOE DOHERTY||19870515|M\rMSH|^~\\&|SIMULATION|SOUTH RIVERSIDE|||20240102135300||ADT^A01|||2.5\r\x1c\r'
+        expected_result = None
+        result = self.obj.parse_message(message)
+        self.assertEqual(result, expected_result)
 
 if __name__ == '__main__':
     unittest.main()

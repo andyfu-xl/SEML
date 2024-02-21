@@ -18,8 +18,11 @@ class Communicator():
         - mllp_address (str): The address of the MLLP server.
         - pager_address (str): The address of the Pager server.
     '''
-    def __init__(self, mllp_address=None, pager_address=None):
+    def __init__(self, mllp_address=None, pager_address=None, communicator_logs=None):
         '''Constructor for the Communicator class.'''
+        if communicator_logs is not None:
+            self.communicator_logs = communicator_logs
+
         if pager_address is not None:
             self.pager_address = pager_address.replace("https://", "").replace("http://", "")
 
@@ -43,6 +46,7 @@ class Communicator():
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, int(self.port)))
                 print(f"Connected to MLLP server at {self.host}:{self.port}.")
+                self.communicator_logs['connect'].inc()
                 return
             except Exception as e:
                 print(f"Error occurred while trying to connect to MLLP server: {e}")

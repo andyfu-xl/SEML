@@ -14,7 +14,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mllp', type=str, help="Address to receive HL7 messages via MLLP")
     parser.add_argument('--pager', type=str, help="Address to page requests via HTTP")
-    parser.add_argument('--history', type=str, help="Path to the history CSV file", default="./data/history.csv")
+    parser.add_argument('--history', type=str, help="Path to the history CSV file", default="./data/coursework5-history.csv")
     parser.add_argument('--model', type=str, help="Path to the model file", default="./lstm_model.pth")
     parser.add_argument('--database', type=str, help="Path to the database .db file", default="./data/database.db")
     parser.add_argument('--log', type=str, help="Path to the logging file", default="./logs/error.log")

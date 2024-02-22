@@ -1,8 +1,6 @@
 from datetime import datetime
 import logging
 
-logging.basicConfig(filename='/app/logs/error.log',level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
 class MLLPMessage:
     '''
     Base class for MLLP message types

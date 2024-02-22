@@ -69,12 +69,7 @@ def main():
         # Page (if necessary)
         if has_aki:
             database.paged(mrn)
-            r = communicator.page(mrn, timestamp)
-            if r is not None and r.status == http.HTTPStatus.OK:
-                print(f"Patient {mrn} has been paged.")
-            else:
-                # page_failures.inc()
-                pass
+            communicator.page(mrn, timestamp)
 
             prediction_metrics['positive_predictions'].inc()
             prediction_metrics['positive_prediction_rate'].set(prediction_metrics['positive_predictions']._value.get() 

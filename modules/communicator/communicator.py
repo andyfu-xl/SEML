@@ -2,6 +2,7 @@ import socket
 import time
 import urllib.request
 from enum import Enum
+from collections import deque 
 
 class MLLPDelimiter(Enum):
     START_OF_BLOCK = 0x0b
@@ -20,6 +21,8 @@ class Communicator():
     '''
     def __init__(self, mllp_address=None, pager_address=None, communicator_logs=None):
         '''Constructor for the Communicator class.'''
+        self.page_queue = deque()
+
         if communicator_logs is not None:
             self.communicator_logs = communicator_logs
 
@@ -111,28 +114,24 @@ class Communicator():
             - mrn (str): The medical record number of the patient to page.
             - timestamp (str): The timestamp of the message.
         '''
-        request = mrn
-        if timestamp is not None:
-            request = f"{mrn},{timestamp}"
-        request_bytes = bytes(request, "ascii")
+        self.page_queue.append((mrn, timestamp))
+        try:
+            while len(self.page_queue) > 0:
+                queued_mrn, queued_timestamp = self.page_queue.popleft()
+                request = queued_mrn
+                if timestamp is not None:
+                    request = f"{queued_mrn},{queued_timestamp}"
+                request_bytes = bytes(request, "ascii")
 
-        max_retries = 3 # Shorter retry attempts for paging to avoid delays
-        retry_delay = 3 
-        for _ in range(max_retries):
-            try:
                 r = urllib.request.urlopen(
                     f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
                     data=request_bytes
                 )
-                return r
-            except Exception as e:
-                print(f"Error occurred while trying to page {mrn}: {e}")
-                print(f"Retrying in {retry_delay} seconds...")
-                time.sleep(retry_delay)
-        
-        print(f"Maximum retry attempts reached. Could not page {mrn}.")
-        return None
-        
+                print(f"Patient {queued_mrn} has been paged.")
+        except Exception as e:
+            print(f"Error occurred while trying to page {queued_mrn}: {e}")
+            self.communicator_logs['page_failures'].inc()
+            self.page_queue.appendleft((queued_mrn, queued_timestamp))
 
     def shutdown_server(self):
         '''Sends a shutdown request to the Pager server.'''

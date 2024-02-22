@@ -3,13 +3,13 @@ import argparse
 import torch
 import http
 import logging
-from prometheus_client import Counter, Gauge, start_http_server
 
 from modules.communicator.communicator import Communicator
 from modules.dataparser.dataparser import DataParser
 from modules.database import Database
 from modules.preprocessor import Preprocessor
 from modules.model import load_model, inference
+from modules.metrics_monitoring import start_monitoring, message_metrics, communicator_metrics, prediction_metrics
 
 def main():
     parser = argparse.ArgumentParser()
@@ -24,24 +24,8 @@ def main():
     ### Metrics ###
     logging.basicConfig(filename=flags.log, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    # Messages metrics
-    messages_received = Counter('messages_received', 'Number of messages received')
-    null_messages = Counter('null_messages', 'Number of null messages received')
-    invalid_messages = Counter('invalid_messages', 'Number of invalid messages received')
-    num_blood_test_results = Counter('blood_test_messages', 'Number of blood test results received')
-
-    # Connection metrics
-    connection_attempts = Counter('connection_attempts', 'Number of connection attempts')
-    page_failures = Counter('page_failures', 'Number of page failures')
-
-    # Prediction metrics
-    sum_blood_test_results = Counter('sum_blood_test_results', 'Sum of blood test results')
-    running_mean_blood_test_results = Gauge('running_mean_blood_test_results', 'Running mean of blood test results')
-    positive_predictions = Counter('positive_predictions', 'Number of positive predictions')
-    positive_prediction_rate = Gauge('positive_prediction_rate', 'Positive prediction rate')
-
     ### Main ###
-    communicator = Communicator(flags.mllp, flags.pager, communicator_logs={'connect': connection_attempts})
+    communicator = Communicator(flags.mllp, flags.pager, communicator_logs=communicator_metrics)
     dataparser = DataParser()
     database = Database(flags.database)
     # database.load_csv(flags.history, flags.database)
@@ -52,9 +36,9 @@ def main():
     while True:
         # Receive message
         message = communicator.receive()
-        messages_received.inc()
+        message_metrics['message_received'].inc()
         if message == None:
-            null_messages.inc()
+            message_metrics['null_messages'].inc()
             communicator.connect()
             continue
 
@@ -62,13 +46,14 @@ def main():
         parsed_message = dataparser.parse_message(message)
         
         if parsed_message == None:
-            invalid_messages.inc()
+            message_metrics['invalid_messages'].inc()
             communicator.acknowledge()
             continue
         elif parsed_message.message_type == 'ORU^R01':
-            num_blood_test_results.inc()
-            sum_blood_test_results.inc(parsed_message.obx_value)
-            running_mean_blood_test_results.set(sum_blood_test_results._value.get() / num_blood_test_results._value.get())
+            message_metrics['num_blood_test_results'].inc()
+            prediction_metrics['sum_blood_test_results'].inc(parsed_message.obx_value)
+            prediction_metrics['running_mean_blood_test_results'].set(prediction_metrics['sum_blood_test_results']._value.get() 
+                                                                      / message_metrics['num_blood_test_results']._value.get())
 
         mrn = parsed_message.mrn
         timestamp = parsed_message.msg_timestamp
@@ -88,17 +73,19 @@ def main():
             if r is not None and r.status == http.HTTPStatus.OK:
                 print(f"Patient {mrn} has been paged.")
             else:
-                page_failures.inc()
+                # page_failures.inc()
+                pass
 
-            positive_predictions.inc()
-            positive_prediction_rate.set(positive_predictions._value.get() / num_blood_test_results._value.get())
+            prediction_metrics['positive_predictions'].inc()
+            prediction_metrics['positive_prediction_rate'].set(prediction_metrics['positive_predictions']._value.get() 
+                                                                / message_metrics['num_blood_test_results']._value.get())
 
         # Acknowledge message
         communicator.acknowledge()
 
 if __name__ == "__main__":
     try:
-        server, t = start_http_server(8000)
+        server, t = start_monitoring()
         main()
     finally:
         print("Server stopped")

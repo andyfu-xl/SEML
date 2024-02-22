@@ -46,11 +46,12 @@ class Communicator():
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, int(self.port)))
                 print(f"Connected to MLLP server at {self.host}:{self.port}.")
-                self.communicator_logs['connect'].inc()
+                self.communicator_logs['connection_attempts'].inc()
                 return
             except Exception as e:
                 print(f"Error occurred while trying to connect to MLLP server: {e}")
                 print(f"Retrying in {retry_delay} seconds...")
+                self.communicator_logs['connection_failures'].inc()
                 self.close()
                 time.sleep(retry_delay)
                 retry_delay += delay_increment  # Linear backoff

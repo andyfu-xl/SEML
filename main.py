@@ -33,6 +33,7 @@ def main():
     # Connection metrics
     connection_attempts = Counter('connection_attempts', 'Number of connection attempts')
     page_failures = Counter('page_failures', 'Number of page failures')
+    communicator_logs = {'connect': connection_attempts, 'page_failures': page_failures}
 
     # Prediction metrics
     sum_blood_test_results = Counter('sum_blood_test_results', 'Sum of blood test results')
@@ -41,7 +42,7 @@ def main():
     positive_prediction_rate = Gauge('positive_prediction_rate', 'Positive prediction rate')
 
     ### Main ###
-    communicator = Communicator(flags.mllp, flags.pager, communicator_logs={'connect': connection_attempts})
+    communicator = Communicator(flags.mllp, flags.pager, communicator_logs=communicator_logs)
     dataparser = DataParser()
     database = Database(flags.database)
     # database.load_csv(flags.history, flags.database)
@@ -84,11 +85,7 @@ def main():
         # Page (if necessary)
         if has_aki:
             database.paged(mrn)
-            r = communicator.page(mrn, timestamp)
-            if r is not None and r.status == http.HTTPStatus.OK:
-                print(f"Patient {mrn} has been paged.")
-            else:
-                page_failures.inc()
+            communicator.page(mrn, timestamp)
 
             positive_predictions.inc()
             positive_prediction_rate.set(positive_predictions._value.get() / num_blood_test_results._value.get())

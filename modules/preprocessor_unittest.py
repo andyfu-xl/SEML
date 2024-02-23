@@ -4,7 +4,7 @@ import os
 import torch
 from preprocessor import Preprocessor, AGE_MEAN, AGE_STD, DATE_MEAN, DATE_STD, VALUE_MEAN, VALUE_STD
 from database import Database
-import dataparser.messagetypes as messagetypes
+import messagetypes as messagetypes
 
 class TestPreprocessor(unittest.TestCase):
     def setUp(self):

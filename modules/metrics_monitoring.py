@@ -33,6 +33,55 @@ prediction_metrics = {
     "positive_prediction_rate": Gauge('positive_prediction_rate', 'Positive prediction rate')
 }
 
+def increase_message_received():
+    message_metrics['messages_received'].inc()
+    return True
+
+def increase_null_messages():
+    message_metrics['null_messages'].inc()
+    return True
+
+def increase_invalid_messages():
+    message_metrics['invalid_messages'].inc()
+    return True
+
+def increase_blood_test_messages():
+    message_metrics['num_blood_test_results'].inc()
+    return True
+
+def increase_connection_attempts():
+    communicator_metrics['connection_attempts'].inc()
+    return True
+
+def increase_connection_failures():
+    communicator_metrics['connection_failures'].inc()
+    return True
+
+def increase_page_failures():
+    communicator_metrics['page_failures'].inc()
+    return True
+
+def increase_sum_blood_test_results(value):
+    prediction_metrics['sum_blood_test_results'].inc(value)
+    return True
+
+def update_running_mean_blood_test_results():
+    prediction_metrics['running_mean_blood_test_results'].set(
+            prediction_metrics['sum_blood_test_results']._value.get() 
+            / message_metrics['num_blood_test_results']._value.get())
+    return True
+
+def increase_positive_predictions():
+    prediction_metrics['positive_predictions'].inc()
+    return True
+
+def update_positive_prediction_rate():
+    prediction_metrics['positive_prediction_rate'].set(
+            prediction_metrics['positive_predictions']._value.get() 
+            / message_metrics['num_blood_test_results']._value.get())
+    return True
+
+
 def start_monitoring():
     server, t = start_http_server(8000)
     return server, t

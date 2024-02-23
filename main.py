@@ -4,12 +4,12 @@ import torch
 import http
 import logging
 
-from modules.communicator.communicator import Communicator
-from modules.dataparser.dataparser import DataParser
+from modules.communicator import Communicator
+from modules.dataparser import DataParser
 from modules.database import Database
 from modules.preprocessor import Preprocessor
 from modules.model import load_model, inference
-from modules.metrics_monitoring import start_monitoring, message_metrics, communicator_metrics, prediction_metrics
+import modules.metrics_monitoring as monitoring
 
 def main():
     parser = argparse.ArgumentParser()
@@ -25,7 +25,7 @@ def main():
     logging.basicConfig(filename=flags.log, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     ### Main ###
-    communicator = Communicator(flags.mllp, flags.pager, communicator_logs=communicator_metrics)
+    communicator = Communicator(flags.mllp, flags.pager)
     dataparser = DataParser()
     database = Database(flags.database)
     # database.load_csv(flags.history, flags.database)
@@ -33,12 +33,15 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model(flags.model).to(device)
 
+    ## settle the positives but not paged mrn in the database
+
+
     while True:
         # Receive message
         message = communicator.receive()
-        message_metrics['message_received'].inc()
+        monitoring.increase_message_received()
         if message == None:
-            message_metrics['null_messages'].inc()
+            monitoring.increase_null_messages()
             communicator.connect()
             continue
 
@@ -46,14 +49,13 @@ def main():
         parsed_message = dataparser.parse_message(message)
         
         if parsed_message == None:
-            message_metrics['invalid_messages'].inc()
+            monitoring.increase_invalid_messages()
             communicator.acknowledge(accept=False)
             continue
         elif parsed_message.message_type == 'ORU^R01':
-            message_metrics['num_blood_test_results'].inc()
-            prediction_metrics['sum_blood_test_results'].inc(parsed_message.obx_value)
-            prediction_metrics['running_mean_blood_test_results'].set(prediction_metrics['sum_blood_test_results']._value.get() 
-                                                                      / message_metrics['num_blood_test_results']._value.get())
+            monitoring.increase_blood_test_messages()
+            monitoring.increase_sum_blood_test_results(parsed_message.obx_value)
+            monitoring.update_running_mean_blood_test_results()
 
         mrn = parsed_message.mrn
         timestamp = parsed_message.msg_timestamp
@@ -75,9 +77,8 @@ def main():
                 r = communicator.page(mrn, timestamp)
                 if r is not None and r.status == http.HTTPStatus.OK:
                     database.paged(mrn)
-                    prediction_metrics['positive_predictions'].inc()
-                    prediction_metrics['positive_prediction_rate'].set(prediction_metrics['positive_predictions']._value.get() 
-                                                                / message_metrics['num_blood_test_results']._value.get())
+                    monitoring.increase_positive_predictions()
+                    monitoring.update_positive_prediction_rate()
                 else:
                     communicator.page_queue.appendleft((mrn, timestamp))
                     break
@@ -87,7 +88,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        server, t = start_monitoring()
+        server, t = monitoring.start_monitoring()
         main()
     finally:
         print("Server stopped")

@@ -11,6 +11,9 @@ from modules.database import Database
 from modules.preprocessor import Preprocessor
 from modules.model import load_model, inference
 
+import signal
+import sys
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mllp', type=str, help="Address to receive HL7 messages via MLLP")
@@ -93,9 +96,18 @@ def main():
         # Acknowledge message
         communicator.acknowledge()
 
+def signal_handler(signum, frame):
+    print('SIGTERM received, performing cleanup...')
+    # Perform any necessary cleanup here
+    # save last received message
+    # add log and output metrics
+    sys.exit(0)
+
 if __name__ == "__main__":
     try:
         server, t = start_http_server(8000)
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
         main()
     finally:
         print("Server stopped")

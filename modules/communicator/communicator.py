@@ -114,24 +114,21 @@ class Communicator():
             - mrn (str): The medical record number of the patient to page.
             - timestamp (str): The timestamp of the message.
         '''
-        self.page_queue.append((mrn, timestamp))
         try:
-            while len(self.page_queue) > 0:
-                queued_mrn, queued_timestamp = self.page_queue.popleft()
-                request = queued_mrn
-                if timestamp is not None:
-                    request = f"{queued_mrn},{queued_timestamp}"
-                request_bytes = bytes(request, "ascii")
+            request = mrn
+            if timestamp is not None:
+                request = f"{mrn},{timestamp}"
+            request_bytes = bytes(request, "ascii")
 
-                r = urllib.request.urlopen(
-                    f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
-                    data=request_bytes
-                )
-                print(f"Patient {queued_mrn} has been paged.")
+            r = urllib.request.urlopen(
+                f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
+                data=request_bytes
+            )
+            return r
         except Exception as e:
-            print(f"Error occurred while trying to page {queued_mrn}: {e}")
+            print(f"Error occurred while trying to page {mrn}: {e}")
             self.communicator_logs['page_failures'].inc()
-            self.page_queue.appendleft((queued_mrn, queued_timestamp))
+            self.page_queue.appendleft((mrn, timestamp))
 
     def shutdown_server(self):
         '''Sends a shutdown request to the Pager server.'''

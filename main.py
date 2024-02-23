@@ -68,12 +68,17 @@ def main():
         
         # Page (if necessary)
         if has_aki:
-            database.paged(mrn)
-            communicator.page(mrn, timestamp)
-
-            prediction_metrics['positive_predictions'].inc()
-            prediction_metrics['positive_prediction_rate'].set(prediction_metrics['positive_predictions']._value.get() 
+            communicator.page_queue.append((mrn, timestamp))
+            while communicator.page_queue:
+                mrn, timestamp = communicator.page_queue.pop()
+                r = communicator.page(mrn, timestamp)
+                if r is not None and r.status == http.HTTPStatus.OK:
+                    database.paged(mrn)
+                    prediction_metrics['positive_predictions'].inc()
+                    prediction_metrics['positive_prediction_rate'].set(prediction_metrics['positive_predictions']._value.get() 
                                                                 / message_metrics['num_blood_test_results']._value.get())
+                else:
+                    communicator.page_queue.append((mrn, timestamp))
 
         # Acknowledge message
         communicator.acknowledge()

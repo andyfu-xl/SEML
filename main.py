@@ -68,6 +68,7 @@ def main():
         
         # Page (if necessary)
         if has_aki:
+            database.is_positive(mrn)
             communicator.page_queue.append((mrn, timestamp))
             while communicator.page_queue:
                 mrn, timestamp = communicator.page_queue.pop()

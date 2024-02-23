@@ -78,7 +78,8 @@ def main():
                     prediction_metrics['positive_prediction_rate'].set(prediction_metrics['positive_predictions']._value.get() 
                                                                 / message_metrics['num_blood_test_results']._value.get())
                 else:
-                    communicator.page_queue.append((mrn, timestamp))
+                    communicator.page_queue.appendleft((mrn, timestamp))
+                    break
 
         # Acknowledge message
         communicator.acknowledge()

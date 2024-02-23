@@ -113,6 +113,9 @@ class TestDatabase(unittest.TestCase):
     def test_paging(self):
         self.db.paged('1')
         self.assertTrue(self.db.get('1')['paged'])
+    def test_to_page(self):
+        self.db.is_positive('1')
+        self.assertTrue(self.db.get('1')['to_page'])
     
 
 if __name__ == '__main__':

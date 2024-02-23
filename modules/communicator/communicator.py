@@ -49,11 +49,12 @@ class Communicator():
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, int(self.port)))
                 print(f"Connected to MLLP server at {self.host}:{self.port}.")
-                self.communicator_logs['connect'].inc()
+                self.communicator_logs['connection_attempts'].inc()
                 return
             except Exception as e:
                 print(f"Error occurred while trying to connect to MLLP server: {e}")
                 print(f"Retrying in {retry_delay} seconds...")
+                self.communicator_logs['connection_failures'].inc()
                 self.close()
                 time.sleep(retry_delay)
                 retry_delay += delay_increment  # Linear backoff
@@ -84,13 +85,19 @@ class Communicator():
             message = self.receive()
             return message
     
-    def acknowledge(self):
+    def acknowledge(self, accept=True):
         '''Sends an acknowledgment message to the MLLP server with the current time.'''
         current_time = time.strftime("%Y%m%d%H%M%S")
-        ACK = [
-            f"MSH|^~\&|||||{current_time}||ACK|||2.5",
-            "MSA|AA",
-        ]
+        if accept:
+            ACK = [
+                f"MSH|^~\&|||||{current_time}||ACK|||2.5",
+                "MSA|AA",
+            ]
+        else:
+            ACK = [
+                f"MSH|^~\&|||||{current_time}||ACK|||2.5",
+                "MSA|AE",
+            ]
         self.socket.sendall(self.to_mllp(ACK))
 
     def close(self):
@@ -113,24 +120,21 @@ class Communicator():
             - mrn (str): The medical record number of the patient to page.
             - timestamp (str): The timestamp of the message.
         '''
-        self.page_queue.append((mrn, timestamp))
         try:
-            while len(self.page_queue) > 0:
-                queued_mrn, queued_timestamp = self.page_queue.popleft()
-                request = queued_mrn
-                if timestamp is not None:
-                    request = f"{queued_mrn},{queued_timestamp}"
-                request_bytes = bytes(request, "ascii")
+            request = mrn
+            if timestamp is not None:
+                request = f"{mrn},{timestamp}"
+            request_bytes = bytes(request, "ascii")
 
-                r = urllib.request.urlopen(
-                    f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
-                    data=request_bytes
-                )
-                print(f"Patient {queued_mrn} has been paged.")
+            r = urllib.request.urlopen(
+                f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
+                data=request_bytes
+            )
+            return r
         except Exception as e:
-            print(f"Error occurred while trying to page {queued_mrn}: {e}")
+            print(f"Error occurred while trying to page {mrn}: {e}")
             self.communicator_logs['page_failures'].inc()
-            self.page_queue.appendleft((queued_mrn, queued_timestamp))
+            return None
 
     def shutdown_server(self):
         '''Sends a shutdown request to the Pager server.'''

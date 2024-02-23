@@ -25,6 +25,7 @@ class Database:
                last_test TEXT,
                test_results TEXT,
                test_dates TEXT,
+               to_page INTEGER,
                paged INTEGER)''')
         self.conn.commit()
         
@@ -45,6 +46,7 @@ class Database:
                 last_test TEXT,
                 test_results REAL,
                 test_dates REAL,
+                to_page INTEGER,
                 paged INTEGER)''')
         conn.commit()
         with open(file_path, newline='') as csvfile:
@@ -57,8 +59,8 @@ class Database:
                 test_results = ','.join(test_results)
                 test_dates = [str(x) for x in test_dates]
                 test_dates = ','.join(test_dates)
-                data_template = (mrn, '', '', '', last_test, test_results, test_dates, 0)
-                curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data_template)      
+                data_template = (mrn, '', '', '', last_test, test_results, test_dates, 0, 0)
+                curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, to_page, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data_template)      
                 conn.commit()   
 
     def process_dates(self, test_results):
@@ -119,7 +121,8 @@ class Database:
                 "last_test": result[4],
                 "test_results": result[5],
                 "test_dates": result[6],
-                "paged": result[7]
+                "to_page": result[7],
+                "paged": result[8]
             }
         
 
@@ -163,8 +166,8 @@ class Database:
             self.conn.commit()
         elif result[0] == 0:
             # register the patient first
-            data_template = (mrn, "", "", "", str(date), str(value), str(0), 0)
-            self.curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data_template)
+            data_template = (mrn, "", "", "", str(date), str(value), str(0), 0, 0)
+            self.curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, to_page, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data_template)
             self.conn.commit()
         else:
             # this should never be triggered if our implementation is correct, used for debugging
@@ -187,14 +190,30 @@ class Database:
         if result[0] == 1:
             self.curs.execute("UPDATE patients_info SET gender = ?, dob = ?, name = ? WHERE mrn = ?", (gender, dob, name, mrn))
         elif result[0] == 0:
-            data_template = (mrn, dob, gender, name, '', '', '', 0)
-            self.curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data_template)
+            data_template = (mrn, dob, gender, name, '', '', '', 0, 0)
+            self.curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, to_page, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data_template)
         else:
-            # this should never be triggered if our implementation is correct, used for debugging
             raise Exception('Error: Multiple patients found with the same MRN:', mrn)
         self.conn.commit()
         
-        
+    def is_positive(self, mrn):
+        '''
+        Check if the patient has been paged
+        Args:
+            mrn (str): The medical record number of the patient
+        Returns:
+            bool: True if the patient has been paged, False otherwise
+        '''
+        self.curs.execute("SELECT COUNT(*) FROM patients_info WHERE mrn=?", (mrn,))
+        result = self.curs.fetchone()
+        if result[0] == 1:
+            self.curs.execute("UPDATE patients_info SET to_page = ? WHERE mrn = ?", (1, mrn))
+            self.conn.commit()
+        elif result[0] == 0:
+            raise Exception('Error: Trying to page a non-existing patient, MRN not found:', mrn)
+        else:
+            raise Exception('Error: Multiple patients found with the same MRN:', mrn)
+    
     def paged(self, mrn):
         '''
         This function pages the patient, we only have to page a patient once.
@@ -207,8 +226,12 @@ class Database:
             self.curs.execute("UPDATE patients_info SET paged = ? WHERE mrn = ?", (1, mrn))
             self.conn.commit()
         elif result[0] == 0:
-            # this should never be triggered, should be deleted after testing
             raise Exception('Error: Trying to page a non-existing patient, MRN not found:', mrn)
         else:
-            # this should never be triggered if our implementation is correct, used for debugging
             raise Exception('Error: Multiple patients found with the same MRN:', mrn)
+        
+    def close(self):
+        '''
+        Close the database connection
+        '''
+        self.conn.close()

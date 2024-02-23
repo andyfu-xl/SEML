@@ -85,13 +85,19 @@ class Communicator():
             message = self.receive()
             return message
     
-    def acknowledge(self):
+    def acknowledge(self, accept=True):
         '''Sends an acknowledgment message to the MLLP server with the current time.'''
         current_time = time.strftime("%Y%m%d%H%M%S")
-        ACK = [
-            f"MSH|^~\&|||||{current_time}||ACK|||2.5",
-            "MSA|AA",
-        ]
+        if accept:
+            ACK = [
+                f"MSH|^~\&|||||{current_time}||ACK|||2.5",
+                "MSA|AA",
+            ]
+        else:
+            ACK = [
+                f"MSH|^~\&|||||{current_time}||ACK|||2.5",
+                "MSA|AE",
+            ]
         self.socket.sendall(self.to_mllp(ACK))
 
     def close(self):

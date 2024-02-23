@@ -47,7 +47,7 @@ def main():
         
         if parsed_message == None:
             message_metrics['invalid_messages'].inc()
-            communicator.acknowledge()
+            communicator.acknowledge(accept=False)
             continue
         elif parsed_message.message_type == 'ORU^R01':
             message_metrics['num_blood_test_results'].inc()
@@ -82,7 +82,7 @@ def main():
                     break
 
         # Acknowledge message
-        communicator.acknowledge()
+        communicator.acknowledge(accept=True)
 
 if __name__ == "__main__":
     try:

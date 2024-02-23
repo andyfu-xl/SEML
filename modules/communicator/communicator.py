@@ -134,7 +134,7 @@ class Communicator():
         except Exception as e:
             print(f"Error occurred while trying to page {mrn}: {e}")
             self.communicator_logs['page_failures'].inc()
-            self.page_queue.appendleft((mrn, timestamp))
+            return None
 
     def shutdown_server(self):
         '''Sends a shutdown request to the Pager server.'''

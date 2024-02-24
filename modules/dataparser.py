@@ -2,6 +2,8 @@ from . import messagetypes
 # import messagetypes
 import logging
 
+DATAPARSER_LOG = '../logs/dataparser.log'
+
 class DataParser():
     '''
     Main class for parsing HL7 messages
@@ -21,6 +23,7 @@ class DataParser():
         self.ORU = 'ORU^R01'
         self.A01 = 'ADT^A01'
         self.A03 = 'ADT^A03'
+        logging.basicConfig(filename=DATAPARSER_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     def remove_start_and_end(self, message: bytes, start=b'\x0b', end=b'\x1c'):
         '''

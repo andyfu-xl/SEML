@@ -1,3 +1,4 @@
+import logging
 import socket
 import time
 import urllib.request
@@ -6,6 +7,8 @@ from collections import deque
 
 #import metrics_monitoring as monitoring
 import modules.metrics_monitoring as monitoring
+
+COMMUNICATOR_LOG = '../logs/communicator.log'
 
 class MLLPDelimiter(Enum):
     START_OF_BLOCK = 0x0b
@@ -25,14 +28,14 @@ class Communicator():
     def __init__(self, mllp_address=None, pager_address=None):
         '''Constructor for the Communicator class.'''
         self.page_queue = deque()
-
+        logging.basicConfig(filename=COMMUNICATOR_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')  
         if pager_address is not None:
             self.pager_address = pager_address.replace("https://", "").replace("http://", "")
 
         if mllp_address is not None:
             self.mllp_address = mllp_address.replace("https://", "").replace("http://", "")
             self.host, self.port = self.mllp_address.split(":")
-            self.connect()
+            self.connect()  
 
     # MLLP server
     def connect(self):
@@ -46,13 +49,16 @@ class Communicator():
         while True:
             try:
                 print(f"Attempting to connect to {self.host}:{self.port}...")
+                logging.info(f"Attempting to connect to {self.host}:{self.port}...")
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, int(self.port)))
                 print(f"Connected to MLLP server at {self.host}:{self.port}.")
+                logging.info(f"Connected to MLLP server at {self.host}:{self.port}.")
                 monitoring.increase_connection_attempts()
                 return None
             except Exception as e:
                 print(f"Error occurred while trying to connect to MLLP server: {e}")
+                logging.error(f"Error occurred while trying to connect to MLLP server: {e}")
                 print(f"Retrying in {retry_delay} seconds...")
                 monitoring.increase_connection_failures()
                 self.close()
@@ -60,6 +66,7 @@ class Communicator():
                 if retry_delay < max_backoff:
                     retry_delay += delay_increment  # Linear backoff
                 else:
+                    print(f"Maximum retry delay of {max_backoff} seconds reached. Retrying in {max_backoff} seconds...")
                     retry_delay = max_backoff
 
 
@@ -82,6 +89,7 @@ class Communicator():
             return message
         except Exception as e:
             print(f"Error occurred while trying to receive message from MLLP server: {e}")
+            logging.error(f"Error occurred while trying to receive message from MLLP server: {e}")
             self.connect()
             message = self.receive()
             return message
@@ -99,10 +107,12 @@ class Communicator():
                 f"MSH|^~\&|||||{current_time}||ACK|||2.5",
                 "MSA|AE",
             ]
+            logging.error(f"Requesting for retransmission of message, AE message sent")
         self.socket.sendall(self.to_mllp(ACK))
 
     def close(self):
         '''Closes the connection to the MLLP server.'''
+        logging.info(f"Closing connection to MLLP server at {self.host}:{self.port}..")
         self.socket.close()
 
     # Packing and unpacking MLLP messages
@@ -133,6 +143,7 @@ class Communicator():
             )
             return r
         except Exception as e:
+            logging.error(f"Error occurred while trying to page {mrn}: {e}")
             print(f"Error occurred while trying to page {mrn}: {e}")
             monitoring.increase_page_failures()
             return None

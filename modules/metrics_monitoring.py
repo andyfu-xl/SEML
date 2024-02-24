@@ -1,7 +1,6 @@
 from prometheus_client import start_http_server, Summary, Counter, Gauge
 
 import random
-
 import time
 
 
@@ -131,6 +130,15 @@ def increase_DATABASE_ERROR_multiple_patients_same_mrn():
 
 def increase_DATABASE_ERROR_page_nonexistent_patient():
     database_metrics['DATABASE_ERROR_page_non-existent_patient'].inc()
+    return True
+
+### Preprocessor metrics
+preprocessor_metrics = {
+    "num_of_preprocess_failures": Counter('num_of_preprocess_failures', 'Number of preprocess failures'),
+}
+
+def increase_num_of_preprocess_failures():
+    preprocessor_metrics['num_of_preprocess_failures'].inc()
     return True
 
 

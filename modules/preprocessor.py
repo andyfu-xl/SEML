@@ -1,5 +1,7 @@
 from datetime import datetime
 import torch
+import metrics_monitoring as monitoring
+import logging
 
 # Following constants are computed from CW1 training data
 # the mean and standard deviation of the test result value and age
@@ -15,9 +17,12 @@ DATE_STD = 56.37914791297929
 STANDARDIZE_MEAN = [DATE_MEAN, VALUE_MEAN, AGE_MEAN, 0]
 STANDARDIZE_STD = [DATE_STD, VALUE_STD, AGE_STD, 1]
 
+PREPROCESSOR_LOG = '../logs/preprocessor.log'
+
 class Preprocessor():
     def __init__(self, database):
         self.database = database
+        logging.basicConfig(filename=PREPROCESSOR_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     def preprocess(self, message):
         '''
@@ -82,25 +87,43 @@ class Preprocessor():
         Check if the message is valid
         '''
         if self.message.mrn is None:
-            raise Exception('Error: MRN not found in the message')
+            monitoring.increase_num_of_preprocess_failures()
+            logging.error('Preprocess Error: MRN not found in the message')
+            # raise Exception('Error: MRN not found in the message')
         if self.message.message_type == 'ADT^A01':
             if self.message.gender is None:
-                raise Exception('Error: Invalid message: no gender found')
+                monitoring.increase_num_of_preprocess_failures()
+                logging.error('Preprocess Error: Invalid message: no gender found')
+                # raise Exception('Error: Invalid message: no gender found')
             if self.message.dob is None:
-                raise Exception('Error: Invalid message: no date of birth found')
+                monitoring.increase_num_of_preprocess_failures()
+                logging.error('Preprocess Error: Invalid message: no date of birth found')
+                # raise Exception('Error: Invalid message: no date of birth found')
             if self.message.name is None:
-                raise Exception('Error: Invalid message: no name found')
+                monitoring.increase_num_of_preprocess_failures()
+                logging.error('Preprocess Error: Invalid message: no name found')
+                # raise Exception('Error: Invalid message: no name found')
         elif self.message.message_type == 'ADT^A03':
             if self.message.mrn is None:
-                raise Exception('Error: Invalid message: no MRN found')
+                monitoring.increase_num_of_preprocess_failures()
+                logging.error('Preprocess Error: Invalid message: no MRN found')
+                # raise Exception('Error: Invalid message: no MRN found')
         elif self.message.message_type == 'ORU^R01':
             if not self.message.obx_type == "CREATININE":
-                raise Exception('Error: Invalid message: invalid test type:', self.message.obx_type)
+                monitoring.increase_num_of_preprocess_failures()
+                logging.error(f'Preprocess Error: Invalid message: invalid test type: {self.message.obx_type}')
+                # raise Exception('Error: Invalid message: invalid test type:', self.message.obx_type)
             elif self.message.obx_value is None:
+                monitoring.increase_num_of_preprocess_failures()
+                logging.error('Preprocess Error: Invalid message: no test value found')
                 raise Exception('Error: Invalid message: no test value found')
             elif self.message.obr_timestamp is None:
+                monitoring.increase_num_of_preprocess_failures()
+                logging.error('Preprocess Error: Invalid message: no test date found')
                 raise Exception('Error: Invalid message: no test date found')
         else:
+            monitoring.increase_num_of_preprocess_failures()
+            logging.error(f'Preprocess Error: Invalid message type: {self.message.message_type}')
             raise Exception('Error: Invalid message type:', self.message.message_type)
 
 

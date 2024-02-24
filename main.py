@@ -14,6 +14,8 @@ import modules.metrics_monitoring as monitoring
 import signal
 import sys
 
+MAIN_LOG = './logs/main.log'
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mllp', type=str, help="Address to receive HL7 messages via MLLP")
@@ -21,11 +23,11 @@ def main():
     parser.add_argument('--history', type=str, help="Path to the history CSV file", default="./data/coursework5-history.csv")
     parser.add_argument('--model', type=str, help="Path to the model file", default="./lstm_model.pth")
     parser.add_argument('--database', type=str, help="Path to the database .db file", default="./data/database.db")
-    parser.add_argument('--log', type=str, help="Path to the logging file", default="./logs/error.log")
+    # parser.add_argument('--log', type=str, help="Path to the logging file", default="./logs/error.log")
     flags = parser.parse_args()
 
     ### Metrics ###
-    logging.basicConfig(filename=flags.log, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(filename=MAIN_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logging.info('Server started')
     ### Main ###
     communicator = Communicator(flags.mllp, flags.pager)
@@ -40,7 +42,18 @@ def main():
     mrns_times = database.settle_positives()
     for mrn, timestamp in mrns_times:
         communicator.page_queue.append((mrn, timestamp))
+    while communicator.page_queue:
+        mrn, timestamp = communicator.page_queue.pop()
+        r = communicator.page(mrn, timestamp)
+        if r is not None and r.status == http.HTTPStatus.OK:
+            database.paged(mrn)
+            monitoring.increase_positive_predictions()
+            monitoring.update_positive_prediction_rate()
+        else:
+            communicator.page_queue.appendleft((mrn, timestamp))
+            break
 
+    ## start the server
     while True:
         # Receive message
         message = communicator.receive()
@@ -107,6 +120,5 @@ if __name__ == "__main__":
         signal.signal(signal.SIGINT, signal_handler)
         main()
     finally:
-        print("Server stopped")
         server.shutdown()
         t.join()

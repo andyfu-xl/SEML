@@ -1,6 +1,5 @@
 from . import messagetypes
-# import messagetypes
-import logging
+from modules.module_logging import dataparser_logger
 
 class DataParser():
     '''
@@ -68,10 +67,10 @@ class DataParser():
             elif msg_type == self.A03:
                 return self.A03
             else:
-                logging.error(f'Invalid message type: {msg_type}')
+                dataparser_logger.error(f'Invalid message type: {msg_type}')
                 return msg_type
         except Exception:
-            logging.error('Invalid message format: missing required fields')
+            dataparser_logger.error('Invalid message format: missing required fields')
             return None
 
     def parse_message(self, message: bytes):
@@ -97,7 +96,7 @@ class DataParser():
             message_obj = messagetypes.Adt_a03()
             is_processed = message_obj.process_message(message_segments)
         else:
-            logging.error(f'Error while parsing: {message}')
+            dataparser_logger.error(f'Invalid message type: {msg_type}')
             return None
         
         if is_processed:

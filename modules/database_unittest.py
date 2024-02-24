@@ -2,6 +2,7 @@ import unittest
 from database import Database
 from datetime import datetime
 import os
+from metrics_monitoring import database_metrics
 
 class TestDatabase(unittest.TestCase):
     def setUp(self):
@@ -33,17 +34,16 @@ class TestDatabase(unittest.TestCase):
 
     def test_process_date(self):
         # test with incorrectly ordered dates
-        with self.assertRaises(Exception) as context:
-            self.db.process_dates(['2020-02-01 00:00:00', '1', '2020-01-02 00:00:00', '2', '2010-01-03 00:00:00', '3'])
-        self.assertTrue('Dates are not in order:' in str(context.exception))
+        inv_dates = database_metrics['DATABASE_ERROR_dates_not_in_order']._value.get()
+        self.db.process_dates(['2020-02-01 00:00:00', '1', '2020-01-02 00:00:00', '2', '2010-01-03 00:00:00', '3'])
+        self.assertEqual(database_metrics['DATABASE_ERROR_dates_not_in_order']._value.get(), inv_dates + 1)
         # test with empty test results
-        with self.assertRaises(Exception) as context:
-            self.db.process_dates([])
-        self.assertTrue('Invalid test results length:' in str(context.exception))
+        inv_results = database_metrics['DATABASE_ERROR_invalid_test_results_length']._value.get()
+        self.db.process_dates([])
+        self.assertEqual(database_metrics['DATABASE_ERROR_invalid_test_results_length']._value.get(), inv_results + 1)
         # test with imcomplete test results
-        with self.assertRaises(Exception) as context:
-            self.db.process_dates(['2020-01-01 00:00:00'])
-        self.assertTrue('Invalid test results length:' in str(context.exception))
+        self.db.process_dates(['2020-01-01 00:00:00'])
+        self.assertEqual(database_metrics['DATABASE_ERROR_invalid_test_results_length']._value.get(), inv_results + 2)
         
         # test with only one test result
         test_results, test_dates, last_test = self.db.process_dates(['2020-01-01 00:00:00', '1'])
@@ -114,9 +114,12 @@ class TestDatabase(unittest.TestCase):
         self.db.paged('1')
         self.assertTrue(self.db.get('1')['paged'])
     def test_to_page(self):
-        self.db.is_positive('1')
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.db.is_positive('1', timestamp)
         self.assertTrue(self.db.get('1')['to_page'])
-    
+
+        result = self.db.settle_positives()
+        self.assertEqual(result, [(1, timestamp)])
 
 if __name__ == '__main__':
     unittest.main()

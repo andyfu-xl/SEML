@@ -1,6 +1,6 @@
-import unittest
 import socket
 import time
+import unittest
 
 from communicator import Communicator
 

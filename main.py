@@ -110,7 +110,7 @@ def signal_handler(signum, frame):
     sys.exit(0)
 
 if __name__ == "__main__":
-    MAIN_LOG = './logs/main.log'
+    # MAIN_LOG = '/logs/main.log'
     try:
         server, t = monitoring.start_monitoring()
         signal.signal(signal.SIGTERM, signal_handler)

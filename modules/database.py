@@ -1,8 +1,8 @@
 import csv
 from datetime import datetime
-import logging
 import sqlite3
 import modules.metrics_monitoring as monitoring
+from modules.module_logging import database_logger
 
 class Database:
     def __init__(self, file_path=None):
@@ -17,9 +17,9 @@ class Database:
         if file_path is not None:
             self.conn = sqlite3.connect(file_path)
             self.curs = self.conn.cursor()
-            logging.info(f"Connected to database at {file_path}.")
+            database_logger('INFO', f"Connected to database at {file_path}.")
         else:
-            logging.error(f"Error occurred while trying to connect to database")
+            database_logger('ERROR', f"Error occurred while trying to connect to database")
             monitoring.increase_DATABASE_ERROR_file_path_connection_failures()
             # we have to raise an exception here, because the database is required for the application to work
             raise Exception('Error: No file path provided for the database')
@@ -85,7 +85,7 @@ class Database:
             last_test (str): The date of the last test
         '''
         if len(test_results) < 2 or len(test_results) % 2 != 0:
-            logging.error(f"Invalid test results length: {len(test_results)}")
+            database_logger('ERROR', f"Invalid test results length: {len(test_results)}")
             monitoring.increase_DATABASE_ERROR_invalid_test_results_length()
             return None
         curr_date = test_results[0]
@@ -100,7 +100,7 @@ class Database:
             next_date = test_results[i+2]
             next_date = datetime.strptime(next_date, '%Y-%m-%d %H:%M:%S')
             if next_date < curr_date:
-                logging.error(f"Dates are not in order: {next_date} is less than {curr_date}")
+                database_logger('ERROR', f"Dates are not in order: {next_date} is less than {curr_date}")
                 monitoring.increase_DATABASE_ERROR_dates_not_in_order()
                 return None
             # compute time difference, in seconds
@@ -184,7 +184,7 @@ class Database:
             self.curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, to_page, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data_template)
             self.conn.commit()
         else:
-            logging.error(f"Multiple patients with the same MRN: {mrn}")
+            database_logger('ERROR', f"Multiple patients with the same MRN: {mrn}")
             monitoring.increase_DATABASE_ERROR_multiple_patients_same_mrn()
         
     def settle_positives(self):
@@ -214,7 +214,7 @@ class Database:
             data_template = (mrn, dob, gender, name, '', '', '', "", 0)
             self.curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, to_page, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data_template)
         else:
-            logging.error(f"Multiple patients with the same MRN: {mrn}")
+            database_logger('ERROR', f"Multiple patients with the same MRN: {mrn}")
             monitoring.increase_DATABASE_ERROR_multiple_patients_same_mrn()
             return None
         self.conn.commit()
@@ -233,11 +233,11 @@ class Database:
             self.curs.execute("UPDATE patients_info SET to_page = ? WHERE mrn = ?", (timestamp, mrn))
             self.conn.commit()
         elif result[0] == 0:
-            logging.error(f"Patient with MRN {mrn} does not exist")
+            database_logger('ERROR', f"Patient with MRN {mrn} does not exist")
             monitoring.increase_DATABASE_ERROR_missing_mrn()
             return None
         else:
-            logging.error(f"Multiple patients with the same MRN: {mrn}")
+            database_logger('ERROR', f"Multiple patients with the same MRN: {mrn}")
             monitoring.increase_DATABASE_ERROR_multiple_patients_same_mrn()
             return None
     
@@ -255,11 +255,11 @@ class Database:
             self.curs.execute("UPDATE patients_info SET to_page = '' WHERE mrn = ?", (mrn,))
             self.conn.commit()
         elif result[0] == 0:
-            logging.error(f"Patient with MRN {mrn} does not exist")
+            database_logger('ERROR', f"Patient with MRN {mrn} does not exist")
             monitoring.increase_DATABASE_ERROR_page_nonexistent_patient()
             return None
         else:
-            logging.error(f"Multiple patients with the same MRN: {mrn}")
+            database_logger('ERROR', f"Multiple patients with the same MRN: {mrn}")
             monitoring.increase_DATABASE_ERROR_multiple_patients_same_mrn()
             return None
         
@@ -267,5 +267,5 @@ class Database:
         '''
         Close the database connection
         '''
-        logging.info(f"Closing connection to database")
+        database_logger('INFO', f"Closing connection to database")
         self.conn.close()

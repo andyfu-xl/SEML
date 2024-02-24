@@ -1,7 +1,7 @@
 from datetime import datetime
 import torch
 import modules.metrics_monitoring as monitoring
-import logging
+from modules.module_logging import preprocessor_logger
 
 # Following constants are computed from CW1 training data
 # the mean and standard deviation of the test result value and age
@@ -88,51 +88,42 @@ class Preprocessor():
         if self.message.mrn is None:
             valid = False
             monitoring.increase_num_of_preprocess_failures()
-            logging.error('Preprocess Error: MRN not found in the message')
-            # raise Exception('Error: MRN not found in the message')
+            preprocessor_logger.error('Preprocess Error: MRN not found in the message')
         if self.message.message_type == 'ADT^A01':
             if self.message.gender is None:
                 valid = False
                 monitoring.increase_num_of_preprocess_failures()
-                logging.error('Preprocess Error: Invalid message: no gender found')
-                # raise Exception('Error: Invalid message: no gender found')
+                preprocessor_logger.error('Preprocess Error: Invalid message: no gender found')
             if self.message.dob is None:
                 valide = False
                 monitoring.increase_num_of_preprocess_failures()
-                logging.error('Preprocess Error: Invalid message: no date of birth found')
-                # raise Exception('Error: Invalid message: no date of birth found')
+                preprocessor_logger.error('Preprocess Error: Invalid message: no date of birth found')
             if self.message.name is None:
                 valid = False
                 monitoring.increase_num_of_preprocess_failures()
-                logging.error('Preprocess Error: Invalid message: no name found')
-                # raise Exception('Error: Invalid message: no name found')
+                preprocessor_logger.error('Preprocess Error: Invalid message: no name found')
         elif self.message.message_type == 'ADT^A03':
             if self.message.mrn is None:
                 valid = False
                 monitoring.increase_num_of_preprocess_failures()
-                logging.error('Preprocess Error: Invalid message: no MRN found')
-                # raise Exception('Error: Invalid message: no MRN found')
+                preprocessor_logger.error('Preprocess Error: Invalid message: no MRN found')
         elif self.message.message_type == 'ORU^R01':
             if not self.message.obx_type == "CREATININE":
                 valid = False
                 monitoring.increase_num_of_preprocess_failures()
-                logging.error(f'Preprocess Error: Invalid message: invalid test type: {self.message.obx_type}')
-                # raise Exception('Error: Invalid message: invalid test type:', self.message.obx_type)
+                preprocessor_logger.error(f'Preprocess Error: Invalid message: invalid test type: {self.message.obx_type}')
             elif self.message.obx_value is None:
                 valid = False
                 monitoring.increase_num_of_preprocess_failures()
-                logging.error('Preprocess Error: Invalid message: no test value found')
-                # raise Exception('Error: Invalid message: no test value found')
+                preprocessor_logger.error('Preprocess Error: Invalid message: no test value found')
             elif self.message.obr_timestamp is None:
                 valid = False
                 monitoring.increase_num_of_preprocess_failures()
-                logging.error('Preprocess Error: Invalid message: no test date found')
-                # raise Exception('Error: Invalid message: no test date found')
+                preprocessor_logger.error('Preprocess Error: Invalid message: no test date found')
         else:
             valid = False
             monitoring.increase_num_of_preprocess_failures()
-            logging.error(f'Preprocess Error: Invalid message type: {self.message.message_type}')
-            # raise Exception('Error: Invalid message type:', self.message.message_type)
+            preprocessor_logger.error(f'Preprocess Error: Invalid message type: {self.message.message_type}')
         return valid
 
 

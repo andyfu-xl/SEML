@@ -1,12 +1,11 @@
-import logging
 import socket
 import time
 import urllib.request
 from enum import Enum
 from collections import deque 
 
-#import metrics_monitoring as monitoring
 import modules.metrics_monitoring as monitoring
+from modules.module_logging import communicatior_logger
 
 class MLLPDelimiter(Enum):
     START_OF_BLOCK = 0x0b
@@ -46,16 +45,16 @@ class Communicator():
         while True:
             try:
                 print(f"Attempting to connect to {self.host}:{self.port}...")
-                logging.info(f"Attempting to connect to {self.host}:{self.port}...")
+                communicatior_logger('INFO', f"Attempting to connect to {self.host}:{self.port}...")
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.socket.connect((self.host, int(self.port)))
+                communicatior_logger('INFO', f"Connected to MLLP server at {self.host}:{self.port}.")
                 print(f"Connected to MLLP server at {self.host}:{self.port}.")
-                logging.info(f"Connected to MLLP server at {self.host}:{self.port}.")
                 monitoring.increase_connection_attempts()
                 return None
             except Exception as e:
+                communicatior_logger('ERROR', f"Error occurred while trying to connect to MLLP server: {e}")
                 print(f"Error occurred while trying to connect to MLLP server: {e}")
-                logging.error(f"Error occurred while trying to connect to MLLP server: {e}")
                 print(f"Retrying in {retry_delay} seconds...")
                 monitoring.increase_connection_failures()
                 self.close()
@@ -85,8 +84,8 @@ class Communicator():
                 message += buffer
             return message
         except Exception as e:
+            communicatior_logger('ERROR', f"Error occurred while trying to receive message from MLLP server: {e}")
             print(f"Error occurred while trying to receive message from MLLP server: {e}")
-            logging.error(f"Error occurred while trying to receive message from MLLP server: {e}")
             self.connect()
             message = self.receive()
             return message
@@ -104,12 +103,12 @@ class Communicator():
                 f"MSH|^~\&|||||{current_time}||ACK|||2.5",
                 "MSA|AE",
             ]
-            logging.error(f"Requesting for retransmission of message, AE message sent")
+            communicatior_logger('ERROR', f"Requesting for retransmission of message, AE message sent")
         self.socket.sendall(self.to_mllp(ACK))
 
     def close(self):
         '''Closes the connection to the MLLP server.'''
-        logging.info(f"Closing connection to MLLP server at {self.host}:{self.port}..")
+        communicatior_logger('INFO', f"Closing connection to MLLP server at {self.host}:{self.port}..")
         self.socket.close()
 
     # Packing and unpacking MLLP messages
@@ -133,15 +132,13 @@ class Communicator():
             if timestamp is not None:
                 request = f"{mrn},{timestamp}"
             request_bytes = bytes(request, "ascii")
-            print(request_bytes)
-            print(f"http://{self.pager_address}{PagerAPI.PAGE.value}")
             r = urllib.request.urlopen(
                 f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
                 data=request_bytes
             )
             return r
         except Exception as e:
-            logging.error(f"Error occurred while trying to page {mrn}: {e}")
+            communicatior_logger('ERROR', f"Error occurred while trying to page {mrn}: {e}")
             print(f"Error occurred while trying to page {mrn}: {e}")
             monitoring.increase_page_failures()
             return None

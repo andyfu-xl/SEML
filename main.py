@@ -26,7 +26,7 @@ def main():
 
     ### Metrics ###
     logging.basicConfig(filename=flags.log, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
+    logging.info('Server started')
     ### Main ###
     communicator = Communicator(flags.mllp, flags.pager)
     dataparser = DataParser()
@@ -37,7 +37,7 @@ def main():
     model = load_model(flags.model).to(device)
 
     ## settle the positives but not paged mrn in the database
-
+    
 
     while True:
         # Receive message
@@ -90,7 +90,9 @@ def main():
         communicator.acknowledge(accept=True)
 
 def signal_handler(signum, frame):
-    print('SIGTERM received, performing cleanup...')
+    logging.info('SIGTERM received, gracefully shutting down')
+    Database.close()
+    Communicator.close()
     # Perform any necessary cleanup here
     # save last received message
     # add log and output metrics

@@ -1,5 +1,7 @@
 from datetime import datetime
 import torch
+import modules.metrics_monitoring as monitoring
+from modules.module_logging import preprocessor_logger
 
 # Following constants are computed from CW1 training data
 # the mean and standard deviation of the test result value and age
@@ -33,7 +35,8 @@ class Preprocessor():
                                     9 is the fixed number of test results for each patient, 4 is the number of features
         '''
         self.message = message
-        self.check_message()
+        if not self.check_message():
+            return None
         # register patient
         if self.message.message_type == 'ADT^A01':
             self.database.register(self.message.mrn, self.message.gender, self.message.dob, self.message.name)
@@ -44,8 +47,12 @@ class Preprocessor():
         # test result
         elif self.message.message_type == 'ORU^R01':
             patient_data = self.database.get(self.message.mrn)
+            if patient_data is None:
+                return None
+            if patient_data["gender"] == "" or patient_data["dob"] =="":
+                return None
             # we do not have to page a patient twice
-            if patient_data["paged"]:
+            if patient_data["paged"] or patient_data["to_page"]:
                 return None
             gender = patient_data['gender']
             dob = patient_data['dob']
@@ -77,27 +84,47 @@ class Preprocessor():
         '''
         Check if the message is valid
         '''
+        valid = True
         if self.message.mrn is None:
-            raise Exception('Error: MRN not found in the message')
+            valid = False
+            monitoring.increase_num_of_preprocess_failures()
+            preprocessor_logger.error('Preprocess Error: MRN not found in the message')
         if self.message.message_type == 'ADT^A01':
             if self.message.gender is None:
-                raise Exception('Error: Invalid message: no gender found')
+                valid = False
+                monitoring.increase_num_of_preprocess_failures()
+                preprocessor_logger.error('Preprocess Error: Invalid message: no gender found')
             if self.message.dob is None:
-                raise Exception('Error: Invalid message: no date of birth found')
+                valide = False
+                monitoring.increase_num_of_preprocess_failures()
+                preprocessor_logger.error('Preprocess Error: Invalid message: no date of birth found')
             if self.message.name is None:
-                raise Exception('Error: Invalid message: no name found')
+                valid = False
+                monitoring.increase_num_of_preprocess_failures()
+                preprocessor_logger.error('Preprocess Error: Invalid message: no name found')
         elif self.message.message_type == 'ADT^A03':
             if self.message.mrn is None:
-                raise Exception('Error: Invalid message: no MRN found')
+                valid = False
+                monitoring.increase_num_of_preprocess_failures()
+                preprocessor_logger.error('Preprocess Error: Invalid message: no MRN found')
         elif self.message.message_type == 'ORU^R01':
             if not self.message.obx_type == "CREATININE":
-                raise Exception('Error: Invalid message: invalid test type:', self.message.obx_type)
+                valid = False
+                monitoring.increase_num_of_preprocess_failures()
+                preprocessor_logger.error(f'Preprocess Error: Invalid message: invalid test type: {self.message.obx_type}')
             elif self.message.obx_value is None:
-                raise Exception('Error: Invalid message: no test value found')
+                valid = False
+                monitoring.increase_num_of_preprocess_failures()
+                preprocessor_logger.error('Preprocess Error: Invalid message: no test value found')
             elif self.message.obr_timestamp is None:
-                raise Exception('Error: Invalid message: no test date found')
+                valid = False
+                monitoring.increase_num_of_preprocess_failures()
+                preprocessor_logger.error('Preprocess Error: Invalid message: no test date found')
         else:
-            raise Exception('Error: Invalid message type:', self.message.message_type)
+            valid = False
+            monitoring.increase_num_of_preprocess_failures()
+            preprocessor_logger.error(f'Preprocess Error: Invalid message type: {self.message.message_type}')
+        return valid
 
 
     def to_tensor(self, gender, dob, test_results, test_dates):

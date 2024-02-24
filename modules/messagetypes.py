@@ -1,5 +1,5 @@
 from datetime import datetime
-import logging
+from modules.module_logging import messagetypes_logger
 
 class MLLPMessage:
     '''
@@ -8,7 +8,6 @@ class MLLPMessage:
     def __init__(self):
         self.msg_timestamp = None
         self.mrn = None
-
 
 class Adt_a01(MLLPMessage):
     '''
@@ -57,7 +56,7 @@ class Adt_a01(MLLPMessage):
                 not self.name or \
                 not self.dob or \
                 not self.gender:
-                logging.error('Invalid message format: missing required fields')
+                messagetypes_logger('ERROR', 'Invalid message format for ADT^A01: missing required fields')
                 return False
             # parse gender after checking for missing fields, as gender = 0 may trigger a Exception
             if self.gender == 'M':
@@ -65,10 +64,10 @@ class Adt_a01(MLLPMessage):
             elif self.gender == 'F':
                 self.gender = 1
             else:
-                logging.error(f'Error: expected binary gender (F or M) but found: {self.gender}')
+                messagetypes_logger('ERROR', f'Error for ADT^A01: expected binary gender (F or M) but found: {self.gender}')
                 return False
         except Exception:
-            logging.error('Invalid message format: missing required fields')
+            messagetypes_logger('ERROR', 'Invalid message format for ADT^A01: missing required fields')
             return False
         return True
 
@@ -105,10 +104,10 @@ class Adt_a03(MLLPMessage):
             self.msg_timestamp = msh[6]
             self.mrn = pid[3]
             if not self.msg_timestamp or not self.mrn:
-                logging.error('Invalid message format: missing required fields')
+                messagetypes_logger('ERROR', 'Invalid message format for ADT^A03: missing required fields')
                 return False
         except Exception:
-            logging.error('Invalid message format: missing required fields')
+            messagetypes_logger('ERROR', 'Invalid message format for ADT^A03: missing required fields')
             return False
         return True
 
@@ -162,9 +161,9 @@ class Oru_r01(MLLPMessage):
             not self.obr_timestamp or \
             not self.obx_type or \
             not self.obx_value:
-                logging.error('Invalid message format: missing required fields')
+                messagetypes_logger('ERROR', 'Invalid message format for ORU^R01: missing required fields')
                 return False
         except Exception:
-            logging.error('Invalid message format: missing required fields')
+            messagetypes_logger('ERROR', 'Invalid message format for ORU^R01: missing required fields')
             return False
         return True

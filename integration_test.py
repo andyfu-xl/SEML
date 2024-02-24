@@ -7,8 +7,8 @@ import subprocess
 import urllib.error
 import urllib.request
 
-from modules.communicator.communicator import Communicator
-from modules.dataparser.dataparser import DataParser
+from modules.communicator import Communicator
+from modules.dataparser import DataParser
 from modules.preprocessor import Preprocessor
 from modules.database import Database
 from modules.model import inference, load_model

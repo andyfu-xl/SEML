@@ -38,7 +38,8 @@ class Preprocessor():
                                     9 is the fixed number of test results for each patient, 4 is the number of features
         '''
         self.message = message
-        self.check_message()
+        if not self.check_message():
+            return None
         # register patient
         if self.message.message_type == 'ADT^A01':
             self.database.register(self.message.mrn, self.message.gender, self.message.dob, self.message.name)
@@ -86,45 +87,56 @@ class Preprocessor():
         '''
         Check if the message is valid
         '''
+        valid = True
         if self.message.mrn is None:
+            valid = False
             monitoring.increase_num_of_preprocess_failures()
             logging.error('Preprocess Error: MRN not found in the message')
             # raise Exception('Error: MRN not found in the message')
         if self.message.message_type == 'ADT^A01':
             if self.message.gender is None:
+                valid = False
                 monitoring.increase_num_of_preprocess_failures()
                 logging.error('Preprocess Error: Invalid message: no gender found')
                 # raise Exception('Error: Invalid message: no gender found')
             if self.message.dob is None:
+                valide = False
                 monitoring.increase_num_of_preprocess_failures()
                 logging.error('Preprocess Error: Invalid message: no date of birth found')
                 # raise Exception('Error: Invalid message: no date of birth found')
             if self.message.name is None:
+                valid = False
                 monitoring.increase_num_of_preprocess_failures()
                 logging.error('Preprocess Error: Invalid message: no name found')
                 # raise Exception('Error: Invalid message: no name found')
         elif self.message.message_type == 'ADT^A03':
             if self.message.mrn is None:
+                valid = False
                 monitoring.increase_num_of_preprocess_failures()
                 logging.error('Preprocess Error: Invalid message: no MRN found')
                 # raise Exception('Error: Invalid message: no MRN found')
         elif self.message.message_type == 'ORU^R01':
             if not self.message.obx_type == "CREATININE":
+                valid = False
                 monitoring.increase_num_of_preprocess_failures()
                 logging.error(f'Preprocess Error: Invalid message: invalid test type: {self.message.obx_type}')
                 # raise Exception('Error: Invalid message: invalid test type:', self.message.obx_type)
             elif self.message.obx_value is None:
+                valid = False
                 monitoring.increase_num_of_preprocess_failures()
                 logging.error('Preprocess Error: Invalid message: no test value found')
                 raise Exception('Error: Invalid message: no test value found')
             elif self.message.obr_timestamp is None:
+                valid = False
                 monitoring.increase_num_of_preprocess_failures()
                 logging.error('Preprocess Error: Invalid message: no test date found')
                 raise Exception('Error: Invalid message: no test date found')
         else:
+            valid = False
             monitoring.increase_num_of_preprocess_failures()
             logging.error(f'Preprocess Error: Invalid message type: {self.message.message_type}')
             raise Exception('Error: Invalid message type:', self.message.message_type)
+        return valid
 
 
     def to_tensor(self, gender, dob, test_results, test_dates):

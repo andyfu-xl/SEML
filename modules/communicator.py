@@ -8,8 +8,6 @@ from collections import deque
 #import metrics_monitoring as monitoring
 import modules.metrics_monitoring as monitoring
 
-COMMUNICATOR_LOG = '../logs/communicator.log'
-
 class MLLPDelimiter(Enum):
     START_OF_BLOCK = 0x0b
     END_OF_BLOCK = 0x1c
@@ -28,7 +26,6 @@ class Communicator():
     def __init__(self, mllp_address=None, pager_address=None):
         '''Constructor for the Communicator class.'''
         self.page_queue = deque()
-        logging.basicConfig(filename=COMMUNICATOR_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')  
         if pager_address is not None:
             self.pager_address = pager_address.replace("https://", "").replace("http://", "")
 
@@ -136,7 +133,8 @@ class Communicator():
             if timestamp is not None:
                 request = f"{mrn},{timestamp}"
             request_bytes = bytes(request, "ascii")
-
+            print(request_bytes)
+            print(f"http://{self.pager_address}{PagerAPI.PAGE.value}")
             r = urllib.request.urlopen(
                 f"http://{self.pager_address}{PagerAPI.PAGE.value}", 
                 data=request_bytes

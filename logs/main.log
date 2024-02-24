@@ -1,0 +1,7 @@
+2024-02-24 21:43:18,953 - root - INFO - Attempting to connect to localhost:8440...
+2024-02-24 21:43:18,961 - root - INFO - Connected to MLLP server at localhost:8440.
+2024-02-24 21:43:18,962 - root - INFO - Connected to database at ./data/test_db.db.
+2024-02-24 21:43:18,962 - root - INFO - Server started
+2024-02-24 21:43:22,923 - root - INFO - SIGTERM received, gracefully shutting down
+2024-02-24 21:43:22,923 - root - INFO - Closing connection to database
+2024-02-24 21:43:22,923 - root - INFO - Closing connection to MLLP server at localhost:8440..

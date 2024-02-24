@@ -2,9 +2,7 @@ import csv
 from datetime import datetime
 import logging
 import sqlite3
-import metrics_monitoring as monitoring
-
-DATABASE_LOG = '../logs/database.log'
+import modules.metrics_monitoring as monitoring
 
 class Database:
     def __init__(self, file_path=None):
@@ -16,7 +14,6 @@ class Database:
                         keys: test_results, gender, dob, name, last_test, paged
                         Where paged is a flag for avoiding paging the same patient multiple times
         '''
-        logging.basicConfig(filename=DATABASE_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')  
         if file_path is not None:
             self.conn = sqlite3.connect(file_path)
             self.curs = self.conn.cursor()

@@ -14,9 +14,7 @@ import modules.metrics_monitoring as monitoring
 import signal
 import sys
 
-MAIN_LOG = './logs/main.log'
-
-def main():
+def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mllp', type=str, help="Address to receive HL7 messages via MLLP")
     parser.add_argument('--pager', type=str, help="Address to page requests via HTTP")
@@ -26,15 +24,19 @@ def main():
     # parser.add_argument('--log', type=str, help="Path to the logging file", default="./logs/error.log")
     flags = parser.parse_args()
 
+    return flags
+
+def main(communicator, database, dataparser, preprocessor, flags):
+
     ### Metrics ###
     logging.basicConfig(filename=MAIN_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logging.info('Server started')
     ### Main ###
-    communicator = Communicator(flags.mllp, flags.pager)
-    dataparser = DataParser()
-    database = Database(flags.database)
-    # database.load_csv(flags.history, flags.database)
-    preprocessor = Preprocessor(database)
+    # communicator = Communicator(flags.mllp, flags.pager)
+    # dataparser = DataParser()
+    # database = Database(flags.database)
+    # # database.load_csv(flags.history, flags.database)
+    # preprocessor = Preprocessor(database)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model(flags.model).to(device)
 
@@ -88,7 +90,7 @@ def main():
         
         # Page (if necessary)
         if has_aki:
-            database.is_positive(mrn)
+            database.is_positive(mrn, timestamp)
             communicator.page_queue.append((mrn, timestamp))
             while communicator.page_queue:
                 mrn, timestamp = communicator.page_queue.pop()
@@ -96,7 +98,7 @@ def main():
                 if r is not None and r.status == http.HTTPStatus.OK:
                     database.paged(mrn)
                     monitoring.increase_positive_predictions()
-                    monitoring.update_positive_prediction_rate()
+                    # monitoring.update_positive_prediction_rate()
                 else:
                     communicator.page_queue.appendleft((mrn, timestamp))
                     break
@@ -106,19 +108,26 @@ def main():
 
 def signal_handler(signum, frame):
     logging.info('SIGTERM received, gracefully shutting down')
-    Database.close()
-    Communicator.close()
+    database.close()
+    communicator.close()
     # Perform any necessary cleanup here
     # save last received message
     # add log and output metrics
     sys.exit(0)
 
 if __name__ == "__main__":
+    MAIN_LOG = './logs/main.log'
     try:
         server, t = monitoring.start_monitoring()
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
-        main()
+        logging.basicConfig(filename=MAIN_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        flags = get_arguments()
+        communicator = Communicator(flags.mllp, flags.pager)
+        database = Database(flags.database)
+        dataparser = DataParser()
+        preprocessor = Preprocessor(database)
+        main(communicator, database, dataparser, preprocessor, flags)
     finally:
         server.shutdown()
         t.join()

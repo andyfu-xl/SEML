@@ -1,6 +1,6 @@
 from datetime import datetime
 import torch
-import metrics_monitoring as monitoring
+import modules.metrics_monitoring as monitoring
 import logging
 
 # Following constants are computed from CW1 training data
@@ -17,12 +17,9 @@ DATE_STD = 56.37914791297929
 STANDARDIZE_MEAN = [DATE_MEAN, VALUE_MEAN, AGE_MEAN, 0]
 STANDARDIZE_STD = [DATE_STD, VALUE_STD, AGE_STD, 1]
 
-PREPROCESSOR_LOG = '../logs/preprocessor.log'
-
 class Preprocessor():
     def __init__(self, database):
         self.database = database
-        logging.basicConfig(filename=PREPROCESSOR_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     def preprocess(self, message):
         '''
@@ -125,17 +122,17 @@ class Preprocessor():
                 valid = False
                 monitoring.increase_num_of_preprocess_failures()
                 logging.error('Preprocess Error: Invalid message: no test value found')
-                raise Exception('Error: Invalid message: no test value found')
+                # raise Exception('Error: Invalid message: no test value found')
             elif self.message.obr_timestamp is None:
                 valid = False
                 monitoring.increase_num_of_preprocess_failures()
                 logging.error('Preprocess Error: Invalid message: no test date found')
-                raise Exception('Error: Invalid message: no test date found')
+                # raise Exception('Error: Invalid message: no test date found')
         else:
             valid = False
             monitoring.increase_num_of_preprocess_failures()
             logging.error(f'Preprocess Error: Invalid message type: {self.message.message_type}')
-            raise Exception('Error: Invalid message type:', self.message.message_type)
+            # raise Exception('Error: Invalid message type:', self.message.message_type)
         return valid
 
 

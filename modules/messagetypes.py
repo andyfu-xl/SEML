@@ -1,8 +1,6 @@
 from datetime import datetime
 import logging
 
-MESSAGE_TYPES_LOG = '../logs/messagetypes.log'
-
 class MLLPMessage:
     '''
     Base class for MLLP message types
@@ -10,8 +8,6 @@ class MLLPMessage:
     def __init__(self):
         self.msg_timestamp = None
         self.mrn = None
-        logging.basicConfig(filename=MESSAGE_TYPES_LOG, level=logging.INFO,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
 
 class Adt_a01(MLLPMessage):
     '''

@@ -37,7 +37,9 @@ def main():
     model = load_model(flags.model).to(device)
 
     ## settle the positives but not paged mrn in the database
-    
+    mrns_times = database.settle_positives()
+    for mrn, timestamp in mrns_times:
+        communicator.page_queue.append((mrn, timestamp))
 
     while True:
         # Receive message

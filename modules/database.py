@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 import sqlite3
+import metrics_monitoring as monitoring
 
 class Database:
     def __init__(self, file_path=None):
@@ -16,7 +17,9 @@ class Database:
             self.conn = sqlite3.connect(file_path)
             self.curs = self.conn.cursor()
         else:
-            raise Exception('Error: Have to provide a file path for the database')
+            monitoring.increase_DATABASE_ERROR_file_path_connection_failures()
+            # we have to raise an exception here, because the database is required for the application to work
+            raise Exception('Error: No file path provided for the database')
         self.curs.execute('''CREATE TABLE IF NOT EXISTS patients_info (
                mrn INTEGER PRIMARY KEY,
                dob TEXT,
@@ -25,7 +28,7 @@ class Database:
                last_test TEXT,
                test_results TEXT,
                test_dates TEXT,
-               to_page INTEGER,
+               to_page TEXT,
                paged INTEGER)''')
         self.conn.commit()
         
@@ -55,11 +58,14 @@ class Database:
                 if i == 0:
                     continue
                 mrn = row[0]
-                test_results, test_dates, last_test = self.process_dates(row[1:])
+                processed_dates = self.process_dates(row[1:])
+                if processed_dates is None:
+                    return None
+                test_results, test_dates, last_test = processed_dates
                 test_results = ','.join(test_results)
                 test_dates = [str(x) for x in test_dates]
                 test_dates = ','.join(test_dates)
-                data_template = (mrn, '', '', '', last_test, test_results, test_dates, 0, 0)
+                data_template = (mrn, '', '', '', last_test, test_results, test_dates, "", 0)
                 curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, to_page, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data_template)      
                 conn.commit()   
 
@@ -76,11 +82,13 @@ class Database:
             last_test (str): The date of the last test
         '''
         if len(test_results) < 2 or len(test_results) % 2 != 0:
-            raise Exception('Invalid test results length:', test_results)
+            monitoring.increase_DATABASE_ERROR_invalid_test_results_length()
+            return None
         curr_date = test_results[0]
         curr_date = datetime.strptime(curr_date, '%Y-%m-%d %H:%M:%S')
         # remove all emtpy strings
         test_results = [x for x in test_results if x != '']
+        wrong_date_format = False
         for i in range(0, len(test_results)-3, 2):
             if test_results[i+2] == '':
                 test_results[i+2] = 0
@@ -88,7 +96,8 @@ class Database:
             next_date = test_results[i+2]
             next_date = datetime.strptime(next_date, '%Y-%m-%d %H:%M:%S')
             if next_date < curr_date:
-                raise Exception('Dates are not in order:', curr_date, next_date)
+                monitoring.increase_DATABASE_ERROR_dates_not_in_order()
+                return None
             # compute time difference, in seconds
             diff = (next_date - curr_date).total_seconds() / (60*60*24)
             test_results[i] = diff
@@ -166,13 +175,19 @@ class Database:
             self.conn.commit()
         elif result[0] == 0:
             # register the patient first
-            data_template = (mrn, "", "", "", str(date), str(value), str(0), 0, 0)
+            data_template = (mrn, "", "", "", str(date), str(value), str(0), "", 0)
             self.curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, to_page, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data_template)
             self.conn.commit()
         else:
-            # this should never be triggered if our implementation is correct, used for debugging
-            raise Exception('Error: Multiple patients found with the same MRN:', mrn)
+            monitoring.increase_DATABASE_ERROR_multiple_patients_same_mrn()
         
+    def settle_positives(self):
+        '''
+        Settle all the patients who have been paged
+        '''
+        self.curs.execute("SELECT mrn, to_page FROM patients_info WHERE to_page != ''")
+        result = self.curs.fetchall()
+        return result
 
     def register(self, mrn, gender, dob, name):
         '''
@@ -190,13 +205,14 @@ class Database:
         if result[0] == 1:
             self.curs.execute("UPDATE patients_info SET gender = ?, dob = ?, name = ? WHERE mrn = ?", (gender, dob, name, mrn))
         elif result[0] == 0:
-            data_template = (mrn, dob, gender, name, '', '', '', 0, 0)
+            data_template = (mrn, dob, gender, name, '', '', '', "", 0)
             self.curs.execute("INSERT INTO patients_info (mrn, dob, gender, name, last_test, test_results, test_dates, to_page, paged) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data_template)
         else:
-            raise Exception('Error: Multiple patients found with the same MRN:', mrn)
+            monitoring.increase_DATABASE_ERROR_multiple_patients_same_mrn()
+            return None
         self.conn.commit()
         
-    def is_positive(self, mrn):
+    def is_positive(self, mrn, timestamp):
         '''
         Check if the patient has been paged
         Args:
@@ -207,12 +223,14 @@ class Database:
         self.curs.execute("SELECT COUNT(*) FROM patients_info WHERE mrn=?", (mrn,))
         result = self.curs.fetchone()
         if result[0] == 1:
-            self.curs.execute("UPDATE patients_info SET to_page = ? WHERE mrn = ?", (1, mrn))
+            self.curs.execute("UPDATE patients_info SET to_page = ? WHERE mrn = ?", (timestamp, mrn))
             self.conn.commit()
         elif result[0] == 0:
-            raise Exception('Error: Trying to page a non-existing patient, MRN not found:', mrn)
+            monitoring.increase_DATABASE_ERROR_missing_mrn()
+            return None
         else:
-            raise Exception('Error: Multiple patients found with the same MRN:', mrn)
+            monitoring.increase_DATABASE_ERROR_multiple_patients_same_mrn()
+            return None
     
     def paged(self, mrn):
         '''
@@ -225,10 +243,14 @@ class Database:
         if result[0] == 1:
             self.curs.execute("UPDATE patients_info SET paged = ? WHERE mrn = ?", (1, mrn))
             self.conn.commit()
+            self.curs.execute("UPDATE patients_info SET to_page = '' WHERE mrn = ?", (mrn,))
+            self.conn.commit()
         elif result[0] == 0:
-            raise Exception('Error: Trying to page a non-existing patient, MRN not found:', mrn)
+            monitoring.increase_DATABASE_ERROR_page_nonexistent_patient()
+            return None
         else:
-            raise Exception('Error: Multiple patients found with the same MRN:', mrn)
+            monitoring.increase_DATABASE_ERROR_multiple_patients_same_mrn()
+            return None
         
     def close(self):
         '''

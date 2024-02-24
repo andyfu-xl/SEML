@@ -102,7 +102,7 @@ database_metrics = {
     "DATABASE_ERROR_missing_mrn": Counter('missing_mrn', 'Number of missing mrn'),
     "DATABASE_ERROR_invalid_test_results_length": Counter('invalid_test_results_length', 'Number of invalid test results length'),
     "DATABASE_ERROR_multiple_patients_same_mrn": Counter('multiple_patients_same_mrn', 'Number of multiple patients with same mrn'),
-    "DATABASE_ERROR_page_nonexistent_patient": Counter('page_non-existent_patient', 'Number of paging for non-existent patient'),
+    "DATABASE_ERROR_page_nonexistent_patient": Counter('page_non_existent_patient', 'Number of paging for non_existent patient'),
 }
 
 def increase_DATABASE_file_path_connection_attempts():

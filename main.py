@@ -30,6 +30,7 @@ def main(communicator: Communicator, database: Database, dataparser: DataParser,
 
     ### Metrics ###
     main_logger('INFO', 'Server started')
+    monitoring.increase_num_of_startup()
     ### Main ###
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model(flags.model).to(device)
@@ -102,6 +103,7 @@ def main(communicator: Communicator, database: Database, dataparser: DataParser,
 
 def signal_handler(signum, frame):
     main_logger('INFO', 'SIGTERM received, gracefully shutting down')
+    monitoring.increase_num_of_shutdown()
     database.close()
     communicator.close()
     # Perform any necessary cleanup here

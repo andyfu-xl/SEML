@@ -1,12 +1,13 @@
 import logging
 
+LOG_PATH = '/app/data/logs'
 module_dict = {
-    'MAIN': './logs/main.log',
-    'COMMUNICATOR': './logs/communicator.log',
-    'DATABASE': './logs/database.log',
-    'DATAPARSER': './logs/dataparser.log',
-    'PREPROCESSOR': './logs/preprocessor.log',
-    'MESSAGETYPES': './logs/messagetypes.log'
+    'MAIN': f'{LOG_PATH}/main.log',
+    'COMMUNICATOR': f'{LOG_PATH}/communicator.log',
+    'DATABASE': f'{LOG_PATH}/database.log',
+    'DATAPARSER': f'{LOG_PATH}/dataparser.log',
+    'PREPROCESSOR': f'{LOG_PATH}/preprocessor.log',
+    'MESSAGETYPES': f'{LOG_PATH}/messagetypes.log'
 }
 
 def get_custom_logger(log_name, log_file, log_level):

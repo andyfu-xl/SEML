@@ -35,6 +35,7 @@ spec:
             - '--pager=$(PAGER_ADDRESS)'
             - '--model=/app/lstm_model.pth'
             - '--history=/hospital-history/history.csv'
+            - '--database=/app/data/database.db'
           env:
             - name: MLLP_ADDRESS
               value: katehaki-simulator.coursework5:8440
@@ -49,7 +50,7 @@ spec:
             - mountPath: '/hospital-history'
               name: hospital-history
               readOnly: true
-            - mountPath: '/app/data'  
+            - mountPath: '/app/data' #'/state
               name: aki-detection-state
           resources:
             requests:

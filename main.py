@@ -9,7 +9,7 @@ from modules.dataparser import DataParser
 from modules.database import Database
 from modules.preprocessor import Preprocessor
 from modules.model import load_model, inference
-from modules.module_logging import main_logger
+from modules.module_logging import main_logger, set_log_path
 import modules.metrics_monitoring as monitoring
 
 import signal
@@ -22,6 +22,7 @@ def get_arguments():
     parser.add_argument('--history', type=str, help="Path to the history CSV file", default="./data/coursework5-history.csv")
     parser.add_argument('--model', type=str, help="Path to the model file", default="./lstm_model.pth")
     parser.add_argument('--database', type=str, help="Path to the database .db file", default="./data/database.db")
+    parser.add_argument('--logs', type=str, help="Path to the log files", default="./app/data/logs")
     flags = parser.parse_args()
 
     return flags
@@ -113,13 +114,15 @@ def signal_handler(signum, frame):
 
 if __name__ == "__main__":
     # MAIN_LOG = '/logs/main.log'
+
     try:
         server, t = monitoring.start_monitoring()
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
         flags = get_arguments()
+        set_log_path(flags.logs)
         communicator = Communicator(flags.mllp, flags.pager)
-        database = Database(flags.database)
+        database = Database(flags.database, flags.history)
         dataparser = DataParser()
         preprocessor = Preprocessor(database)
         main(communicator, database, dataparser, preprocessor, flags)

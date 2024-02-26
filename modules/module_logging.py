@@ -1,14 +1,29 @@
 import logging
+import os
 
 LOG_PATH = '/app/data/logs'
+
 module_dict = {
-    'MAIN': f'{LOG_PATH}/main.log',
-    'COMMUNICATOR': f'{LOG_PATH}/communicator.log',
-    'DATABASE': f'{LOG_PATH}/database.log',
-    'DATAPARSER': f'{LOG_PATH}/dataparser.log',
-    'PREPROCESSOR': f'{LOG_PATH}/preprocessor.log',
-    'MESSAGETYPES': f'{LOG_PATH}/messagetypes.log'
+    'MAIN': 'main.log',
+    'COMMUNICATOR': 'communicator.log',
+    'DATABASE': 'database.log',
+    'DATAPARSER': 'dataparser.log',
+    'PREPROCESSOR': 'preprocessor.log',
+    'MESSAGETYPES': 'messagetypes.log'
 }
+
+def set_log_path(log_path):
+    LOG_PATH = log_path
+    for key in module_dict:
+        module_dict[key] = f'{LOG_PATH}/{module_dict[key]}'
+        # check if the log file exists, if not create it
+        if not os.path.exists(module_dict[key]):
+            print(f"{module_dict[key]} does not exist. Creating it...")
+            # Open the file in append mode to create it if it doesn't exist
+            with open(module_dict[key], 'a') as file:
+                pass  # 'pass' is just a placeholder since we don't need to write anything
+        else:
+            print(f"{module_dict[key]} already exists.")
 
 def get_custom_logger(log_name, log_file, log_level):
     handler = logging.FileHandler(log_file)

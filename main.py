@@ -22,7 +22,7 @@ def get_arguments():
     parser.add_argument('--history', type=str, help="Path to the history CSV file", default="./data/coursework5-history.csv")
     parser.add_argument('--model', type=str, help="Path to the model file", default="./lstm_model.pth")
     parser.add_argument('--database', type=str, help="Path to the database .db file", default="./data/database.db")
-    parser.add_argument('--logs', type=str, help="Path to the log files", default="/app/data/logs")
+    parser.add_argument('--logs', type=str, help="Path to the log files", default="/state")
     flags = parser.parse_args()
 
     return flags

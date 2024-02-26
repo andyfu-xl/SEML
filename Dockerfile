@@ -21,4 +21,4 @@ COPY modules /app/modules
 RUN chmod +x /app/main.py
 EXPOSE 8440
 EXPOSE 8441
-CMD /app/main.py --mllp=$MLLP_ADDRESS --pager=$PAGER_ADDRESS --history="/app/data/coursework5-history.csv" --model="/app/lstm_model.pth" --database="/state/database.db" --logs="/app/data/logs"
+CMD /app/main.py --mllp=$MLLP_ADDRESS --pager=$PAGER_ADDRESS --history="/app/data/coursework5-history.csv" --model="/app/lstm_model.pth" --database="/state/database.db" --logs="/state"

@@ -1,7 +1,7 @@
 import logging
 import os
 
-LOG_PATH = '/app/data/logs'
+LOG_PATH = '/state'
 
 module_dict = {
     'MAIN': 'main.log',

@@ -8,6 +8,11 @@ data:
     groups:
     - name: aki-alerts
       rules:
+      - alert: ReceivedMessage
+        expr: increase(messages_received[1m]) > 0
+        for: 1m
+        labels:
+          severity: critical
       - alert: ApplicationStart
         expr: increase(num_of_startup[1m]) > 0
         for: 1m

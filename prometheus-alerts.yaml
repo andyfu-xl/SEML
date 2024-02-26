@@ -4,7 +4,7 @@ metadata:
   name: prometheus-alerts
   namespace: katehaki
 data:
-  alerting-rules.yml: |
+  prometheus-alerts.yml: |
     groups:
     - name: aki-alerts
       rules:
@@ -37,7 +37,7 @@ data:
         annotations:
           summary: "Parse failed"
           description: "Parse failed (> 0 in the last minute)."
-    - alert: SocketFailed
+      - alert: SocketFailed
         expr: increase(connection_failures[5m]) > 0
         for: 5m
         labels:
@@ -45,7 +45,7 @@ data:
         annotations:
           summary: "Socket Connection failed"
           description: "Connection to MLLP server failed."
-    - alert: AppShutDown
+      - alert: AppShutDown
         expr: increase(num_of_shutdown[5m]) > 0
         for: 5m
         labels:

@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alerts
+  namespace: katehaki
+data:
+  alerting-rules.yml: |
+    groups:
+    - name: aki-alerts
+      rules:
+      - alert: ApplicationStart
+        expr: increase(num_of_startup[1m]) > 0
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "App Start up"
+          description: "App was started up"
+      - alert: PageFailed
+        expr: increase(page_failures[1m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "page failed"
+          description: "Page failed (> 0 in the last minute)."
+      - alert: ParseFailed
+        expr: increase(invalid_messages[1m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Parse failed"
+          description: "Parse failed (> 0 in the last minute)."
+    - alert: SocketFailed
+        expr: increase(connection_failures[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Socket Connection failed"
+          description: "Connection to MLLP server failed."
+    - alert: AppShutDown
+        expr: increase(num_of_shutdown[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "App shut down"
+          description: "App was shut down"

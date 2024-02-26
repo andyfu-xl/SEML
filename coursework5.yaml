@@ -36,6 +36,7 @@ spec:
             - '--model=/app/lstm_model.pth'
             - '--history=/hospital-history/history.csv'
             - '--database=/state/database.db'
+            - '--log=/app/data/logs'
           env:
             - name: MLLP_ADDRESS
               value: katehaki-simulator.coursework5:8440

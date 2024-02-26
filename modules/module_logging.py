@@ -1,6 +1,6 @@
 import logging
 
-LOG_PATH = '/app/data/logs'
+LOG_PATH = '/app/data'
 module_dict = {
     'MAIN': f'{LOG_PATH}/main.log',
     'COMMUNICATOR': f'{LOG_PATH}/communicator.log',

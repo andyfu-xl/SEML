@@ -50,7 +50,7 @@ spec:
             - mountPath: '/hospital-history'
               name: hospital-history
               readOnly: true
-            - mountPath: '/app/data' #'/state
+            - mountPath: '/app/data'
               name: aki-detection-state
           resources:
             requests:

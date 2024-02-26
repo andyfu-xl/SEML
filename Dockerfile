@@ -10,6 +10,7 @@ COPY integration_test.py /app/
 
 # Copy Data
 COPY data /app/data
+# COPY data /app/data
 COPY data/database.db /app/data/database.db
 
 # Copy Logs

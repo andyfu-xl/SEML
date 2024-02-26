@@ -4,67 +4,16 @@ metadata:
   name: prometheus-config
   namespace: katehaki
 data:
-  prometheus.rules: |
-    groups:
-    - name: aki-alerts
-      rules:
-      - alert: ReceivedMessage
-        expr: increase(messages_received[1m]) > 0
-        for: 1m
-        labels:
-          severity: critical
-      - alert: ApplicationStart
-        expr: increase(num_of_startup[1m]) > 0
-        for: 1m
-        labels:
-          severity: info
-        annotations:
-          summary: "App Start up"
-          description: "App was started up"
-      - alert: PageFailed
-        expr: increase(page_failures[1m]) > 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "page failed"
-          description: "Page failed (> 0 in the last minute)."
-      - alert: ParseFailed
-        expr: increase(invalid_messages[1m]) > 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Parse failed"
-          description: "Parse failed (> 0 in the last minute)."
-      - alert: SocketFailed
-        expr: increase(connection_failures[5m]) > 0
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Socket Connection failed"
-          description: "Connection to MLLP server failed."
-      - alert: AppShutDown
-        expr: increase(num_of_shutdown[5m]) > 0
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "App shut down"
-          description: "App was shut down"
   prometheus.yml: |
     global:
       scrape_interval: 15s
       evaluation_interval: 15s
     rule_files:
-      - /etc/prometheus/prometheus.rules
+      - "/etc/prometheus/prometheus-alerts.yml"
     alerting:
       alertmanagers:
-        - scheme: http
-          static_configs:
-          - targets:
-            - "alertmanager.katehaki.svc.cluster.local:9093"
+        - static_configs:
+          - targets: ['alertmanager.katehaki.svc.cluster.local:9093']
     scrape_configs:
       - job_name: prometheus
         static_configs:
@@ -73,3 +22,6 @@ data:
         static_configs:
           - targets: ['aki-detection-service.katehaki.svc.cluster.local:8000']
         metrics_path: '/metrics'
+      - job_name: 'alertmanager'
+        static_configs:
+          - targets: ['alertmanager.katehaki.svc.cluster.local:9093']

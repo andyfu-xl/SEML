@@ -20,7 +20,7 @@ spec:
             - '--config.file=/etc/alertmanager/alertmanager.yml'
             - '--storage.path=/alertmanager'
           ports:
-            - name: alertmanager
+            - name: web
               containerPort: 9093
           resources:
             requests:

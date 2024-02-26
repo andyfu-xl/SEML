@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: aki-detection
-          image: imperialswemlsspring2024.azurecr.io/coursework5-katehaki
+          image: imperialswemlsspring2024.azurecr.io/coursework6-katehaki
           command: ['/app/main.py']
           args:
             - '--mllp=$(MLLP_ADDRESS)'
@@ -39,9 +39,9 @@ spec:
             - '--log=/state'
           env:
             - name: MLLP_ADDRESS
-              value: katehaki-simulator.coursework5:8440
+              value: katehaki-simulator.coursework6:8440
             - name: PAGER_ADDRESS
-              value: katehaki-simulator.coursework5:8441
+              value: katehaki-simulator.coursework6:8441
             - name: PYTHONUNBUFFERED
               value: '1'
           ports:
@@ -55,11 +55,11 @@ spec:
               name: aki-detection-state
           resources:
             requests:
-              memory: "100Mi"
-              cpu: "100m"
+              memory: 1Gi
+              cpu: 1
       initContainers:
         - name: copy-hospital-history
-          image: imperialswemlsspring2024.azurecr.io/coursework5-history
+          image: imperialswemlsspring2024.azurecr.io/coursework6-history
           volumeMounts:
             - mountPath: '/hospital-history'
               name: hospital-history
@@ -67,8 +67,8 @@ spec:
               name: aki-detection-state
           resources:
             requests:
-              memory: "100Mi"
-              cpu: "100m"
+              memory: 1Gi
+              cpu: 1
       volumes:
         - name: hospital-history
           emptyDir:

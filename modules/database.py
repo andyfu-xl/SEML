@@ -3,9 +3,10 @@ from datetime import datetime
 import sqlite3
 import modules.metrics_monitoring as monitoring
 from modules.module_logging import database_logger
+import os
 
 class Database:
-    def __init__(self, file_path=None):
+    def __init__(self, file_path=None, history_file_path=None):
         '''
         Main class for reading and storing the data, the data is stored in cache
         Attributes:
@@ -14,7 +15,10 @@ class Database:
                         keys: test_results, gender, dob, name, last_test, paged
                         Where paged is a flag for avoiding paging the same patient multiple times
         '''
+        self.initializing = False
         if file_path is not None:
+            if not os.path.exists(file_path) and history_file_path is not None:
+                self.initializing = True
             self.conn = sqlite3.connect(file_path)
             self.curs = self.conn.cursor()
             database_logger('INFO', f"Connected to database at {file_path}.")
@@ -34,6 +38,9 @@ class Database:
                to_page TEXT,
                paged INTEGER)''')
         self.conn.commit()
+
+        if self.initializing:
+            self.load_csv(history_file_path, file_path)
         
 
     def load_csv(self, file_path, db_path):

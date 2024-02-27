@@ -3,6 +3,7 @@ import argparse
 import torch
 import http
 import logging
+import os
 
 from modules.communicator import Communicator
 from modules.dataparser import DataParser
@@ -11,9 +12,11 @@ from modules.preprocessor import Preprocessor
 from modules.model import load_model, inference
 from modules.module_logging import main_logger, set_log_path
 import modules.metrics_monitoring as monitoring
+from modules.recovery_utils import recover_messages, read_missed_messages
 
 import signal
 import sys
+
 
 def get_arguments():
     parser = argparse.ArgumentParser()
@@ -125,6 +128,13 @@ if __name__ == "__main__":
         database = Database(flags.database, flags.history)
         dataparser = DataParser()
         preprocessor = Preprocessor(database)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        missed_messages = read_missed_messages()
+        if missed_messages:
+            print(f"Recovering {len(missed_messages)} missed messages")
+            main_logger('INFO', f"Recovering {len(missed_messages)} missed messages")
+            recover_messages(missed_messages, dataparser, preprocessor, load_model(flags.model), database, device)
         main(communicator, database, dataparser, preprocessor, flags)
     finally:
         server.shutdown()

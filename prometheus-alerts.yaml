@@ -37,19 +37,19 @@ data:
         annotations:
           summary: "Parse failed"
           description: "Parse failed (> 0 in the last minute)."
-    - alert: SocketFailed
-        expr: increase(connection_failures[5m]) > 0
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Socket Connection failed"
-          description: "Connection to MLLP server failed."
-    - alert: AppShutDown
-        expr: increase(num_of_shutdown[5m]) > 0
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "App shut down"
-          description: "App was shut down"
+      - alert: SocketFailed
+          expr: increase(connection_failures[5m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Socket Connection failed"
+            description: "Connection to MLLP server failed."
+      - alert: AppShutDown
+          expr: increase(num_of_shutdown[5m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "App shut down"
+            description: "App was shut down"

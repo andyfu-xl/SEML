@@ -40,3 +40,19 @@ data:
         annotations: 
           summary: "Aki Detection Pod Not Found"
           description: "Pod might have had SIGTERM or Crashed"
+      - alert: Aki Detection Pod Not Found
+        expr: absent(up{job="aki-detection"})
+        for: 3m
+        labels:
+          severity: critical
+        annotations: 
+          summary: "Aki Detection Pod Not Found"
+          description: "Pod might have had SIGTERM or Crashed"
+      - alert: Missing MRN in Database
+        expr: missing_mrn_total > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Missing MRN"
+          description: "Missing MRN in Database"

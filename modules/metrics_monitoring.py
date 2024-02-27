@@ -28,7 +28,9 @@ message_metrics = {
     "messages_received": Counter('messages_received', 'Number of messages received'),
     "null_messages": Counter('null_messages', 'Number of null messages received'),
     "invalid_messages": Counter('invalid_messages', 'Number of invalid messages received'),
-    "num_blood_test_results": Counter('blood_test_messages', 'Number of blood test results received')
+    "num_blood_test_results": Counter('blood_test_messages', 'Number of blood test results received'),
+    "num_admission_messages_received": Counter('admission_messages', 'Number of admission messages received'),
+    "num_discharge_messages_received": Counter('discharge_messages_received', 'Number of discharge messages received')
 }
 
 def increase_message_received():
@@ -46,6 +48,16 @@ def increase_invalid_messages():
 def increase_blood_test_messages():
     message_metrics['num_blood_test_results'].inc()
     return True
+
+def increase_admission_message():
+    message_metrics['num_admission_messages_received'].inc()
+    return True
+
+def increase_discharge_message():
+    message_metrics['num_discharge_messages_received'].inc()
+    return True
+
+
 
 # Connection metrics
 communicator_metrics = {

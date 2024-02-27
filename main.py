@@ -75,6 +75,11 @@ def main(communicator: Communicator, database: Database, dataparser: DataParser,
             monitoring.increase_blood_test_messages()
             monitoring.increase_sum_blood_test_results(parsed_message.obx_value)
             monitoring.update_running_mean_blood_test_results()
+        else:
+            if parsed_message.message_type == 'ADT^A01':
+                monitoring.increase_admission_message()
+            else:
+                monitoring.increase_discharge_message()
 
         mrn = parsed_message.mrn
         timestamp = parsed_message.msg_timestamp

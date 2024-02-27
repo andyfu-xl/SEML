@@ -30,7 +30,8 @@ spec:
           mountPath: /etc/prometheus/prometheus.yml
           subPath: prometheus.yml
         - name: prometheus-alerts
-          mountPath: /etc/prometheus/rules
+          mountPath: "/etc/prometheus/prometheus-alerts.yml"
+          subPath: prometheus-alerts.yml
       volumes:
       - name: config-volume
         configMap:

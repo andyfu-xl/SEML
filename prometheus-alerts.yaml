@@ -4,52 +4,55 @@ metadata:
   name: prometheus-alerts
   namespace: katehaki
 data:
-  alerting-rules.yml: |
+  prometheus-alerts.yml: |
     groups:
     - name: aki-alerts
       rules:
-      - alert: ReceivedMessage
-        expr: increase(messages_received[1m]) > 0
-        for: 1m
-        labels:
-          severity: critical
-      - alert: ApplicationStart
-        expr: increase(num_of_startup[1m]) > 0
-        for: 1m
-        labels:
-          severity: info
-        annotations:
-          summary: "App Start up"
-          description: "App was started up"
-      - alert: PageFailed
-        expr: increase(page_failures[1m]) > 0
+      - alert: Paging Failed. Pager might be down
+        expr: increase(page_failures_total[1m]) > 0
         for: 1m
         labels:
           severity: critical
         annotations:
           summary: "page failed"
           description: "Page failed (> 0 in the last minute)."
-      - alert: ParseFailed
-        expr: increase(invalid_messages[1m]) > 0
+      - alert: Parsing Failed. 
+        expr: increase(invalid_messages_total[1m]) > 0
         for: 1m
         labels:
           severity: critical
         annotations:
           summary: "Parse failed"
           description: "Parse failed (> 0 in the last minute)."
-      - alert: SocketFailed
-          expr: increase(connection_failures[5m]) > 0
-          for: 5m
-          labels:
-            severity: critical
-          annotations:
-            summary: "Socket Connection failed"
-            description: "Connection to MLLP server failed."
-      - alert: AppShutDown
-          expr: increase(num_of_shutdown[5m]) > 0
-          for: 5m
-          labels:
-            severity: critical
-          annotations:
-            summary: "App shut down"
-            description: "App was shut down"
+      - alert: MLLP Connection Failed
+        expr: increase(connection_failures_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Socket Connection failed"
+          description: "Connection to MLLP server failed."
+      - alert: Aki Detection Pod Not Found
+        expr: absent(up{job="aki-detection"})
+        for: 3m
+        labels:
+          severity: critical
+        annotations: 
+          summary: "Aki Detection Pod Not Found"
+          description: "Pod might have had SIGTERM or Crashed"
+      - alert: Aki Detection Pod Not Found
+        expr: absent(up{job="aki-detection"})
+        for: 3m
+        labels:
+          severity: critical
+        annotations: 
+          summary: "Aki Detection Pod Not Found"
+          description: "Pod might have had SIGTERM or Crashed"
+      - alert: Missing MRN in Database
+        expr: missing_mrn_total > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Missing MRN"
+          description: "Missing MRN in Database"

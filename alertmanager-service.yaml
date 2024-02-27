@@ -8,6 +8,6 @@ spec:
   selector:
     app: alertmanager
   ports:
-  - name: alertmanager
-    port: 9093
-    targetPort: alertmanager
+    - name: web
+      port: 9093
+      targetPort: 9093

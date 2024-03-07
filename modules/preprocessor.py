@@ -40,7 +40,6 @@ class Preprocessor():
             return
         # delete patient
         elif self.message.message_type == 'ADT^A03':
-            #self.database.delete(self.message.mrn)
             return
         # test result
         elif self.message.message_type == 'ORU^R01':
